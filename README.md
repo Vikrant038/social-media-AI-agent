@@ -94,10 +94,10 @@ And provide's a better interface.
  The problems that I face are listed down -:
 
 
-1. While creating the venv, in video, she was using MAC and to activate the venv, there are two diff syntax, i got stuck here for a min, but later I realised and searched the windows syntax.
+1. While creating the venv, in video, she was using MAC and to activate the venv, there are two diff syntax, I got stuck here for a min, but later I realised and searched the windows syntax.
 2.  I was trying to fetch the video id from the url,then after some trial and error, using the Video ID directly to the input improved my proccessing time and generating the output more efficiently as it directly uses the ID.
 3. While running the code, one error came that youtube_transcript API is not recongnised, after searching on the web, I re-installed the API that fixed the error.
-4. The last problem that I faced was when I finished writing the code and tested it, it showed unexpected error, insufficient token. I was a bit confused to I re-checked my code and the process, whether is there anything that I forgot to implement. Then I didn't find any mistakes in that.
+4. The last problem that I faced was when I finished writing the code and tested it, it showed unexpected error, insufficient token. I was a bit confused, so I re-checked my code and the process, whether is there anything that I forgot to implement. Then I didn't find any mistakes in that.
    Then I use LLM to fix this problem, and it told that most of the LLM models needs billing, then I understood that I have to buy tokens then my AI Agent will work properly.
    I looked for some alternatives then I got to know about LLM models that you can directly use locally in ur machine like Ollama and many more.
 
