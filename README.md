@@ -58,10 +58,12 @@ cd to project folder
 
 
 **2** 
+
 <img width="1085" height="759" alt="image" src="https://github.com/user-attachments/assets/2ad9b385-d1e4-41c9-b644-648ba3f3f180" />
 
 --------------------------------
 **3**
+
 <img width="864" height="768" alt="image" src="https://github.com/user-attachments/assets/c2c2c3fc-cc92-4c23-937d-072505bddf58" />
 
 --------------------------------
@@ -79,12 +81,14 @@ From there step by step I wrote the code while the understanding the us case of 
 5. Learnt about offline LLM models which you can install on your PC and they are free to use once you have download the model you want to use on your PC locally.
 
 **Streamlit**
-It's a really good to run the code on your browser.
+It's a really good tool to run the code on your browser.
 And provide's a better interface.
 
+------------------------
 
  **Challenges**
-
+ 
+------------------------
  
  In this project, it was my first time integrating AI in python.
  The problems that I face are listed down -:
