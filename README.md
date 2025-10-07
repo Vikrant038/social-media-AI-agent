@@ -1,110 +1,100 @@
-# AI Agent
-
-=================================================================
-
-Use Case: A Streamlit web application that generates social media content based on YouTube video transcripts using OpenAI's GPT models.
-
-=================================================================
 
 
-**PROMPTS** 
+# AI Agent: YouTube Transcript-Based Social Media Content Generator
 
-LAYER 1 - **Input Understanding**
-User will be asking to generate a social media post based on my provided video transcript.
+***
 
- '''Here is a new video transcript:video_transcript
-    Generate a social media post based on my provided video transcript. '''
+## Overview
 
+This project is a **Streamlit web application** that creates social media posts using YouTube video transcripts. It leverages OpenAI's GPT models to generate engaging, humorous, and informative posts tailored for various social media platforms.
 
-LAYER 2 - **Task Planer**
-Model used - 'gpt-4o-mini'
-Instruction will be given to the model to provide the valuable data.
+***
 
-'''You are a talented content writer who writes engaging, humorous, informative and 
-    highly readable social media posts. 
-    You will be given a video transcript and social media platforms. 
-    You will generate a social media post based on the video transcript 
-    and the social media platforms.
-    You may search the web for up-to-date information on the topic and 
-    fill in some useful details if needed.'''
+## Project Layers & Workflow
 
-Thus, we creatd our first tool.
+### 1. Input Understanding  
+Users provide a YouTube video transcript. The prompt instructs the AI:  
+```
+Here is a new video transcript: video_transcript
+Generate a social media post based on my provided video transcript.
+```
 
+### 2. Task Planner  
+The model used is **GPT-4o-mini**, guided with instructions:  
+```
+You are a talented content writer who writes engaging, humorous, and highly readable social media posts.  
+You will receive a video transcript and social media platforms.  
+Generate social media posts based on the transcript and platform.  
+You may also search the web for updated information and add useful details.
+```
 
-LAYER 3 - **Output Generator**
-By applying checks:
-1. The youtube id is fetched properly or not.
-2. The model is available or not.
-3. The API key is present.
+This functionality is implemented as the first tool in the agent.
 
-LLM Models Use:
-**1**.What is virtual environment in python, how to implement it
+### 3. Output Generator  
+Before generating output, the agent ensures:  
+- The YouTube video ID is correctly fetched.  
+- The AI model is accessible.  
+- The API key is present and valid.
 
-   - A Python virtual environment is an isolated workspace that has its own Python interpreter and site-packages, so each project can use specific dependency versions without affecting other projects or the system Python. This prevents version conflicts, keeps projects reproducible, and makes collaboration and deployment cleaner.
+***
 
-When to use it
-Working on multiple projects that require different library versions.
-Keeping the system/global Python clean and avoiding permission issues.
-Ensuring consistent, reproducible environments across machines.
+## Learning Insights
 
-Create:
-Windows:
-Command Prompt:
-Navigate to project folder
-python -m venv .venv
+### About Python Virtual Environments  
+- A virtual environment isolates project dependencies and Python versions to avoid conflicts.  
+- Useful when working on multiple projects requiring different packages or versions.  
+- Prevents affecting the system's global Python installation.  
 
-PowerShell:
-cd to project folder
+**Creating a virtual environment:**  
+- Windows Command Prompt:  
+  ```
+  python -m venv .venv
+  ```
+- PowerShell:  
+  ```
+  cd to project directory  
+  py -m venv .venv
+  ```
 
+### Key Project Learnings  
+- How to integrate AI in Python code effectively.  
+- Importance of virtual environments for clean, efficient development.  
+- Automate basic tasks to save time and improve productivity using AI.  
+- Use Streamlit for building interactive web apps running in the browser.  
+- Explore offline large language models (LLMs) for local AI processing without token limits.
 
-**2** 
+***
 
-<img width="1085" height="759" alt="image" src="https://github.com/user-attachments/assets/2ad9b385-d1e4-41c9-b644-648ba3f3f180" />
+## Challenges Faced
 
---------------------------------
-**3**
+1. **Virtual environment activation syntax differed on Windows vs macOS.**  
+   Realized the need to check platform-specific commands for venv activation.
 
-<img width="864" height="768" alt="image" src="https://github.com/user-attachments/assets/c2c2c3fc-cc92-4c23-937d-072505bddf58" />
+2. **Fetching video ID from URLs was inefficient.**  
+   Directly using the video ID improved processing speed and output generation.
 
---------------------------------
-<img width="851" height="785" alt="image" src="https://github.com/user-attachments/assets/bececd3a-f098-4985-9172-b067b63dbf4d" />
+3. **YouTube transcript API errors due to missing or outdated installations.**  
+   Reinstalling the API package resolved recognition issues.
 
---------------------------------
+4. **Insufficient tokens error while running the AI model.**  
+   Learned that many LLMs require billing or token purchase for usage.  
+   Explored local AI models like Ollama that run offline without ongoing costs.
 
-After that I took help from youtube by watching the video and learning the concepts of virtual environment, the libraries that one have to install while building a AI agent.
-From there step by step I wrote the code while the understanding the us case of it as well, it was a little new, but I tried to grasp all the things that I could and learn so many things in this project.
+***
 
-1. How to integrate AI in python.
-2. Creating virtual environment so that it won't affect ur current python system.
-3. AI can be used to automate our most basics task which can improve time management and efficiency.
-4. Use case of StreamLit.
-5. Learnt about offline LLM models which you can install on your PC and they are free to use once you have download the model you want to use on your PC locally.
+## About Streamlit
 
-**Streamlit**
-It's a really good tool to run the code on your browser.
-And provide's a better interface.
+Streamlit is a powerful tool for quickly building data and AI-powered web apps with minimal coding. It provides an intuitive browser interface that enhances user experience and simplifies app deployment.
 
-------------------------
+***
 
- **Challenges**
- 
-------------------------
- 
- In this project, it was my first time integrating AI in python.
- The problems that I face are listed down -:
+## Summary
 
+This project offered hands-on experience in integrating AI with Python, managing project environments, and building user-friendly applications. The challenges strengthened problem-solving skills and introduced modern AI tools and practices that are key to efficient development workflows.
 
-1. While creating the venv, in video, she was using MAC and to activate the venv, there are two diff syntax, I got stuck here for a min, but later I realised and searched the windows syntax.
-2.  I was trying to fetch the video id from the url,then after some trial and error, using the Video ID directly to the input improved my proccessing time and generating the output more efficiently as it directly uses the ID.
-3. While running the code, one error came that youtube_transcript API is not recongnised, after searching on the web, I re-installed the API that fixed the error.
-4. The last problem that I faced was when I finished writing the code and tested it, it showed unexpected error, insufficient token. I was a bit confused, so I re-checked my code and the process, whether is there anything that I forgot to implement. Then I didn't find any mistakes in that.
-   Then I use LLM to fix this problem, and it told that most of the LLM models needs billing, then I understood that I have to buy tokens then my AI Agent will work properly.
-   I looked for some alternatives then I got to know about LLM models that you can directly use locally in ur machine like Ollama and many more.
+***
 
-
-
-
-
+Feel free to explore and contribute!
 
 
 
