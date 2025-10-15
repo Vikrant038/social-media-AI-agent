@@ -1,6 +1,6 @@
 import streamlit as st
 import asyncio
-from social_media_agent import content_writer_agent, get_transcript, Runner, ItemHelpers
+from main import content_writer_agent, get_transcript, Runner, ItemHelpers
 
 import json
 
