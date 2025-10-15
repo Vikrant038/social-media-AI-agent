@@ -1,6 +1,7 @@
 import streamlit as st
 import asyncio
 from social_media_agent import content_writer_agent, get_transcript, Runner, ItemHelpers
+
 import json
 
 
@@ -115,4 +116,4 @@ if st.button("Generate Content", type="primary", disabled=not video_id):
 
 # Footer
 st.markdown("---")
-st.caption("Powered by OpenAI GPT-4o and YouTube Transcript API")
+st.caption("Powered by Gemini and YouTube Transcript API")
