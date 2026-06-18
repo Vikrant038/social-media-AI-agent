@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from dataclasses import dataclass
 from typing import List, Dict
 import json
+import re
 
 
 # --------------------------------------------------------------
@@ -49,84 +50,111 @@ def get_transcript(video_id: str, languages: list = None) -> str:
         transcript_data = fetched_transcript.to_raw_data()
         transcript_text = " ".join([item['text'] for item in transcript_data])
         return transcript_text
-    except Exception as e:
-        print(f"Error fetching transcript: {e}")
+    except Exception:
+        # Re-raise so the UI can surface a friendly message; avoid leaking to stdout.
         raise
+
+
+def _strip_code_fences(text: str) -> str:
+    """Remove a surrounding Markdown code fence (```json ... ``` or ``` ... ```)."""
+    text = text.strip()
+    # Drop an opening fence such as ```json or ``` on the first line.
+    text = re.sub(r"^```[a-zA-Z0-9]*\s*\n?", "", text)
+    # Drop a trailing closing fence.
+    text = re.sub(r"\n?```\s*$", "", text)
+    return text.strip()
+
+
+def _build_example_structure(platforms: List[str]) -> str:
+    """Build a JSON example that lists ONLY the requested platforms."""
+    items = [
+        f'  {{"platform": "{p}", "content": "your {p} post here"}}'
+        for p in platforms
+    ]
+    return "[\n" + ",\n".join(items) + "\n]"
 
 
 def generate_social_content(transcript: str, platforms: List[str], custom_query: str = None) -> AgentResult:
     """
-    Generate social media content using Gemini for multiple platforms.
+    Generate social media content using Gemini for the EXACTLY selected platforms.
     """
     platforms_str = ", ".join(platforms)
-    
+    example_structure = _build_example_structure(platforms)
+
+    # Shared, strict constraint so the model never invents extra platforms.
+    constraint = (
+        f"Generate one post for EACH of these platforms and NO others: {platforms_str}.\n"
+        f"Return a JSON array containing EXACTLY {len(platforms)} object(s), "
+        f"one per platform listed above, using the exact platform names given."
+    )
+
     if custom_query:
         prompt = f"""{custom_query}
 
 Video Transcript:
 {transcript}
 
-Generate engaging social media posts for the following platforms: {platforms_str}
+{constraint}
 
-For each platform, provide:
-1. Platform name
-2. Engaging content optimized for that platform
+For each platform, provide engaging content optimized for that platform.
 
-Return your response as a JSON array with this structure:
-[
-  {{"platform": "LinkedIn", "content": "your LinkedIn post here"}},
-  {{"platform": "Instagram", "content": "your Instagram caption here"}},
-  {{"platform": "Twitter", "content": "your tweet here"}}
-]
+Return your response as a JSON array with this exact structure:
+{example_structure}
 
-Make the content platform-appropriate, engaging, and shareable."""
+Make the content platform-appropriate, engaging, and shareable. Return ONLY the JSON array."""
     else:
         prompt = f"""You are a talented social media content writer.
 
 Video Transcript:
 {transcript}
 
-Generate engaging social media posts for the following platforms: {platforms_str}
+{constraint}
 
 For each platform, create content that is:
-- Platform-appropriate (LinkedIn: professional, Instagram: visual/casual, Twitter: concise)
+- Platform-appropriate (LinkedIn: professional, Instagram: visual/casual, Twitter: concise, Facebook: conversational)
 - Engaging and shareable
 - Based on the key insights from the transcript
 
-Return your response as a JSON array with this structure:
-[
-  {{"platform": "LinkedIn", "content": "your LinkedIn post here"}},
-  {{"platform": "Instagram", "content": "your Instagram caption here"}},
-  {{"platform": "Twitter", "content": "your tweet here"}}
-]"""
-    
+Return your response as a JSON array with this exact structure:
+{example_structure}
+
+Return ONLY the JSON array."""
+
     model = genai.GenerativeModel('gemini-2.0-flash-exp')
     response = model.generate_content(prompt)
-    
+
     # Parse the response
     try:
-        # Extract JSON from response
-        response_text = response.text.strip()
-        
-        # Remove markdown code blocks if present
-        if response_text.startswith("```json"):
-            response_text = response_text.replace("``````", "").strip()
-        elif response_text.startswith("```"):
-            response_text = response_text.replace("```", "").strip()
-        
-        # Parse JSON
+        response_text = _strip_code_fences(response.text)
         posts_data = json.loads(response_text)
-        
-        # Convert to Post objects
-        posts = [Post(platform=p["platform"], content=p["content"]) for p in posts_data]
-        
+
+        # Convert to Post objects, keyed by platform for filtering.
+        parsed = {
+            p["platform"]: p["content"]
+            for p in posts_data
+            if isinstance(p, dict) and "platform" in p and "content" in p
+        }
+
+        # Defensive guard: keep ONLY the platforms the user selected, in order.
+        # Match case-insensitively so "twitter" maps to a requested "Twitter".
+        lookup = {k.lower(): v for k, v in parsed.items()}
+        posts = []
+        for platform in platforms:
+            content = lookup.get(platform.lower())
+            if content:
+                posts.append(Post(platform=platform, content=content))
+
+        # If the model returned nothing usable for the selected platforms, fall back.
+        if not posts:
+            return AgentResult(
+                posts=[Post(platform="Generated Content", content=response.text)],
+                raw_response=response.text,
+            )
+
         return AgentResult(posts=posts, raw_response=response.text)
-    
-    except json.JSONDecodeError as e:
-        print(f"Failed to parse JSON response: {e}")
-        print(f"Raw response: {response.text}")
-        
-        # Fallback: return raw text as a single post
+
+    except json.JSONDecodeError:
+        # Fallback: return raw text as a single post (no data leaked to stdout).
         return AgentResult(
             posts=[Post(platform="Generated Content", content=response.text)],
             raw_response=response.text
