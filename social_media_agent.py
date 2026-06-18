@@ -2,13 +2,26 @@
 # social_media_agent.py
 # --------------------------------------------------------------
 import os
-from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api import (
+    YouTubeTranscriptApi,
+    RequestBlocked,
+    IpBlocked,
+    TranscriptsDisabled,
+    NoTranscriptFound,
+    VideoUnavailable,
+    InvalidVideoId,
+)
+from youtube_transcript_api.proxies import WebshareProxyConfig, GenericProxyConfig
 import google.generativeai as genai
 from dotenv import load_dotenv
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Optional
 import json
 import re
+
+
+class TranscriptError(Exception):
+    """User-facing transcript error with a clear, actionable message."""
 
 
 # --------------------------------------------------------------
@@ -33,6 +46,42 @@ GEMINI_API_KEY = _load_api_key()
 HAS_SERVER_KEY = bool(GEMINI_API_KEY)
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
+
+
+def _secret(name: str) -> str:
+    """Read a config value from st.secrets first, then the environment."""
+    try:
+        import streamlit as st
+        if name in st.secrets:
+            return str(st.secrets[name])
+    except Exception:
+        pass
+    return os.getenv(name, "")
+
+
+def _build_proxy_config():
+    """
+    Build a proxy config to work around YouTube IP bans, if configured.
+
+    Supports either Webshare (recommended) or a generic HTTP/HTTPS proxy via
+    st.secrets or environment variables:
+      - WEBSHARE_PROXY_USERNAME / WEBSHARE_PROXY_PASSWORD
+      - HTTP_PROXY_URL / HTTPS_PROXY_URL
+    Returns None when nothing is configured (direct connection).
+    """
+    ws_user = _secret("WEBSHARE_PROXY_USERNAME")
+    ws_pass = _secret("WEBSHARE_PROXY_PASSWORD")
+    if ws_user and ws_pass:
+        return WebshareProxyConfig(proxy_username=ws_user, proxy_password=ws_pass)
+
+    http_url = _secret("HTTP_PROXY_URL")
+    https_url = _secret("HTTPS_PROXY_URL")
+    if http_url or https_url:
+        return GenericProxyConfig(
+            http_url=http_url or https_url,
+            https_url=https_url or http_url,
+        )
+    return None
 
 
 # --------------------------------------------------------------
@@ -90,20 +139,46 @@ def select_model_name() -> str:
 # --------------------------------------------------------------
 def get_transcript(video_id: str, languages: list = None) -> str:
     """
-    Retrieves the transcript for a YouTube video using the new API interface.
+    Retrieve a YouTube transcript, routing through a proxy if configured, and
+    translate library errors into clear, user-facing messages.
     """
     if languages is None:
         languages = ["en"]
-    
+
+    proxy_config = _build_proxy_config()
     try:
-        ytt_api = YouTubeTranscriptApi()
+        ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config)
         fetched_transcript = ytt_api.fetch(video_id, languages=languages)
         transcript_data = fetched_transcript.to_raw_data()
-        transcript_text = " ".join([item['text'] for item in transcript_data])
-        return transcript_text
-    except Exception:
-        # Re-raise so the UI can surface a friendly message; avoid leaking to stdout.
-        raise
+        return " ".join(item["text"] for item in transcript_data)
+
+    except (RequestBlocked, IpBlocked):
+        if proxy_config is None:
+            raise TranscriptError(
+                "YouTube is temporarily blocking transcript requests from this "
+                "network (common on cloud/shared IPs or after many requests). "
+                "Wait a few minutes and retry, or configure a proxy "
+                "(WEBSHARE_PROXY_USERNAME / WEBSHARE_PROXY_PASSWORD) — see the README."
+            )
+        raise TranscriptError(
+            "YouTube blocked the request even through the configured proxy. "
+            "The proxy may be exhausted or itself blocked; try different proxy "
+            "credentials."
+        )
+    except (TranscriptsDisabled, NoTranscriptFound):
+        raise TranscriptError(
+            "This video has no available transcript/captions in the requested "
+            "language. Try a different video or one with captions enabled."
+        )
+    except InvalidVideoId:
+        raise TranscriptError(
+            "That doesn't look like a valid YouTube video ID. Enter just the ID "
+            "(the part after 'v=' in the URL), not the full link."
+        )
+    except VideoUnavailable:
+        raise TranscriptError(
+            "This video is unavailable (private, deleted, or region-locked)."
+        )
 
 
 def _cached_get_transcript(video_id: str) -> str:

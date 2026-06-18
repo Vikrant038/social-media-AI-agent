@@ -190,9 +190,35 @@ social-media-AI-agent/
 | Problem | Fix |
 | --- | --- |
 | *"Gemini API key not configured"* | Add your key to `.streamlit/secrets.toml` or `.env`. |
-| Transcript error / empty result | The video may have transcripts disabled or no English captions. Try another video. |
+| *"YouTube is blocking transcript requests"* | YouTube rate-limited your IP (common on cloud/shared IPs or after many requests). Wait a few minutes, or configure a proxy — see **[Working around YouTube IP bans](#working-around-youtube-ip-bans)**. |
+| Transcript error / empty result | The video may have transcripts disabled or no captions in the requested language. Try another video. |
 | Wrong/extra platforms generated | Already fixed — only selected platforms are returned. Re-pull the latest code. |
 | Copy button does nothing | Clipboard access requires a secure context (localhost is fine); otherwise use `Ctrl+C`. |
+
+---
+
+## Working around YouTube IP bans
+
+YouTube blocks transcript requests from IPs that make too many requests or that
+belong to cloud providers (AWS, GCP, Azure, etc.). If you see *"YouTube is
+blocking transcript requests"*:
+
+- **Quick fix:** wait a few minutes and retry from a normal home/office network.
+- **Robust fix:** route transcript fetches through a proxy. Set **one** of these
+  in `.streamlit/secrets.toml` or `.env`:
+
+  ```toml
+  # Recommended — Webshare residential proxies (https://www.webshare.io/)
+  WEBSHARE_PROXY_USERNAME = "..."
+  WEBSHARE_PROXY_PASSWORD = "..."
+
+  # …or any generic HTTP/HTTPS proxy
+  HTTP_PROXY_URL  = "http://user:pass@host:port"
+  HTTPS_PROXY_URL = "http://user:pass@host:port"
+  ```
+
+  When set, the app fetches transcripts through the proxy automatically; when
+  unset, it connects directly. No code changes needed.
 
 ---
 
