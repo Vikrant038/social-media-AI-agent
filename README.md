@@ -6,8 +6,63 @@ for **LinkedIn, Instagram, Twitter/X, and Facebook** from the video's transcript
 
 Built with **Streamlit**.
 
-> 📐 Curious how this was built — the bugs we hunted, the trade-offs, and the
-> system design? See **[DESIGN.md](DESIGN.md)**.
+> 📐 Curious how this was built — the bugs I hunted, the trade-offs, and the
+> system design? See **[docs/DESIGN.md](docs/DESIGN.md)**.
+
+---
+
+## The problem I'm solving
+
+Creators and small teams publish one piece of long-form content — usually a
+YouTube video — and then have to manually rewrite it over and over for every
+social platform. That's slow, repetitive, and each platform has its own rules
+(LinkedIn wants a professional hook, Twitter has 280 characters, Instagram lives
+on emoji and hashtags). Most "AI post generators" either ignore those rules or
+spit out the same generic blob everywhere.
+
+**The goal:** paste a video, pick the platforms you actually care about, and get
+back posts that are *ready to publish* and *shaped for each network* — nothing
+more, nothing less.
+
+## How I thought about it
+
+I treated this less like "write a script that calls an AI" and more like
+"design a small product." The reasoning, step by step, so anyone can reuse it:
+
+1. **Start from the user's job, not the API.** The user wants publish-ready posts
+   for *specific* platforms. So "respect the selection exactly" and "match each
+   platform's conventions" became the two non-negotiable requirements — everything
+   else serves those.
+
+2. **Separate the UI from the brain.** The Streamlit page ([app.py](app.py)) only
+   collects input and shows results. All the real work — fetching the transcript,
+   choosing a model, prompting Gemini, validating the output — lives in
+   [social_media_agent.py](social_media_agent.py). This keeps each side simple and
+   testable, and means you could swap the UI (or the AI provider) without rewriting
+   the other half.
+
+3. **Don't trust the model blindly — constrain *and* verify.** I tell Gemini
+   "generate exactly these platforms and no others," *and* I filter its response
+   down to the selected platforms afterwards. Asking nicely isn't enough; the code
+   enforces the contract. (This is what fixed the original bug where unselected
+   platforms still got posts.)
+
+4. **Make failure boring.** A missing API key, a retired model, a video with no
+   captions, or malformed JSON should each produce a clear message — never a crash
+   or a blank screen. Picking the model at runtime from `list_models()` instead of
+   hardcoding one is part of this: the app adapts instead of breaking.
+
+5. **Respect the user's time and money.** Transcripts are cached so re-runs are
+   instant. And because API calls cost money, anyone can bring their own key
+   (BYOK), stored in their own browser so they never have to re-enter it.
+
+6. **Verify by watching it work.** I didn't trust "it returned HTTP 200." I drove
+   a real browser to screenshot the UI and even simulated typing a key + reloading
+   to prove the key persists. If I claim something works, I watched it work.
+
+You can apply this same checklist to almost any small AI tool: *anchor on the
+user's job → split UI from logic → constrain and validate the model → fail
+gracefully → cache and respect cost → verify by observation.*
 
 ---
 
@@ -123,8 +178,8 @@ social-media-AI-agent/
 ├── .env.example                 # Env-var config template
 ├── .streamlit/
 │   └── secrets.toml.example     # Streamlit secrets template
-├── PLAN.md                      # Improvement plan / project map
-├── DESIGN.md                    # Engineering journey: problems, decisions, design
+├── docs/
+│   └── DESIGN.md                # Engineering journey: problems, decisions, design
 └── README.md
 ```
 
