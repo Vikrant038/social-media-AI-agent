@@ -12,11 +12,25 @@ import re
 
 
 # --------------------------------------------------------------
-# Load environment variables
+# Load API key (Streamlit secrets first, then environment / .env)
 # --------------------------------------------------------------
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-genai.configure(api_key=GEMINI_API_KEY)
+
+
+def _load_api_key() -> str:
+    """Resolve the Gemini API key from st.secrets or the environment."""
+    try:
+        import streamlit as st  # optional: only available when run via Streamlit
+        if "GEMINI_API_KEY" in st.secrets:
+            return st.secrets["GEMINI_API_KEY"]
+    except Exception:
+        pass
+    return os.getenv("GEMINI_API_KEY", "")
+
+
+GEMINI_API_KEY = _load_api_key()
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 
 # --------------------------------------------------------------
@@ -55,6 +69,16 @@ def get_transcript(video_id: str, languages: list = None) -> str:
         raise
 
 
+def _cached_get_transcript(video_id: str) -> str:
+    """Transcript fetch, cached by Streamlit when available to avoid refetching."""
+    try:
+        import streamlit as st
+        fetch = st.cache_data(show_spinner=False)(get_transcript)
+    except Exception:
+        fetch = get_transcript  # Streamlit unavailable; fetch directly (uncached).
+    return fetch(video_id)
+
+
 def _strip_code_fences(text: str) -> str:
     """Remove a surrounding Markdown code fence (```json ... ``` or ``` ... ```)."""
     text = text.strip()
@@ -78,6 +102,12 @@ def generate_social_content(transcript: str, platforms: List[str], custom_query:
     """
     Generate social media content using Gemini for the EXACTLY selected platforms.
     """
+    if not GEMINI_API_KEY:
+        raise RuntimeError(
+            "Gemini API key not configured. Set GEMINI_API_KEY in "
+            ".streamlit/secrets.toml or as an environment variable."
+        )
+
     platforms_str = ", ".join(platforms)
     example_structure = _build_example_structure(platforms)
 
@@ -193,8 +223,8 @@ class Runner:
         Returns:
             AgentResult with generated posts
         """
-        # Get transcript
-        transcript = get_transcript(video_id)
+        # Get transcript (cached when running under Streamlit)
+        transcript = _cached_get_transcript(video_id)
         
         # Truncate if too long
         transcript_short = transcript[:4000] if len(transcript) > 4000 else transcript
@@ -212,7 +242,7 @@ if __name__ == "__main__":
     video_id = "OZ5OZZZ2cvk"
     platforms = ["LinkedIn", "Instagram", "Twitter"]
     
-    print(f"📹 Fetching transcript for video: {video_id}")
+    print(f"Fetching transcript for video: {video_id}")
     result = Runner.run(video_id, platforms)
     
     print("\n" + "="*70)
