@@ -5,6 +5,7 @@ import json
 
 import streamlit as st
 import streamlit.components.v1 as components
+from streamlit_local_storage import LocalStorage
 
 from social_media_agent import Runner, ItemHelpers, HAS_SERVER_KEY
 
@@ -159,23 +160,46 @@ f"""<div class="hero">
 with st.sidebar:
     st.markdown(f"## {icon('share')}Content Generator", unsafe_allow_html=True)
 
-    # ----- Bring your own Gemini key (BYOK) -----
+    # ----- Bring your own Gemini key (BYOK), persisted in browser localStorage -----
     st.markdown(f"#### {icon('key')}Gemini API key", unsafe_allow_html=True)
-    user_api_key = st.text_input(
+
+    local_storage = LocalStorage()
+    # getItem returns None on the first render (the component loads async), then
+    # the real value on the follow-up rerun. Seed session_state once it arrives so
+    # the field repopulates after a refresh. value= can't be used here because
+    # Streamlit ignores it once the widget already has state.
+    stored_key = local_storage.getItem("gemini_api_key")
+    if stored_key and not st.session_state.get("_byok_seeded"):
+        st.session_state["api_key_field"] = stored_key
+        st.session_state["_byok_seeded"] = True
+
+    typed_key = st.text_input(
         "Your Gemini API key",
+        key="api_key_field",
         type="password",
         placeholder="AIza...",
-        help="Used only for your session and never stored. "
-             "Get one at aistudio.google.com/app/apikey",
+        help="Stored only in your own browser (localStorage) and sent directly "
+             "to Google. Get one at aistudio.google.com/app/apikey",
         label_visibility="collapsed",
     ).strip()
+
+    # Persist a newly entered key so it survives page refreshes.
+    if typed_key and typed_key != (stored_key or ""):
+        local_storage.setItem("gemini_api_key", typed_key, key="ls_set_key")
+
+    user_api_key = typed_key
 
     if user_api_key:
         st.markdown(
             f'<span class="pill" style="color:#065F46;border-color:#A7F3D0;background:#ECFDF5">'
-            f'{icon("check_circle")}Using your key</span>',
+            f'{icon("check_circle")}Key saved in this browser</span>',
             unsafe_allow_html=True,
         )
+        if st.button("Clear saved key", use_container_width=True, key="clear_key"):
+            local_storage.deleteItem("gemini_api_key")
+            st.session_state["api_key_field"] = ""
+            st.session_state["_byok_seeded"] = True  # don't re-seed from stale storage
+            st.rerun()
     elif HAS_SERVER_KEY:
         st.caption("Optional — leave blank to use the app's shared key.")
     else:

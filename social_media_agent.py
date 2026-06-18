@@ -51,6 +51,41 @@ class AgentResult:
 
 
 # --------------------------------------------------------------
+# Model selection
+# --------------------------------------------------------------
+# Preferred models, best first. We pick the first one the account can actually
+# use so a retired model id (e.g. the old gemini-2.0-flash-exp) never 404s.
+PREFERRED_MODELS = [
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-flash-latest",
+    "gemini-1.5-flash",
+]
+
+
+def select_model_name() -> str:
+    """Return an available model that supports generateContent."""
+    try:
+        available = [
+            m.name.split("/")[-1]
+            for m in genai.list_models()
+            if "generateContent" in getattr(m, "supported_generation_methods", [])
+        ]
+    except Exception:
+        # If listing fails, fall back to the top preferred id and let the call surface errors.
+        return PREFERRED_MODELS[0]
+
+    for preferred in PREFERRED_MODELS:
+        if preferred in available:
+            return preferred
+    # Otherwise prefer any "flash" model, else the first available one.
+    for name in available:
+        if "flash" in name and "exp" not in name:
+            return name
+    return available[0] if available else PREFERRED_MODELS[0]
+
+
+# --------------------------------------------------------------
 # Helper Functions
 # --------------------------------------------------------------
 def get_transcript(video_id: str, languages: list = None) -> str:
@@ -164,7 +199,7 @@ Return your response as a JSON array with this exact structure:
 
 Return ONLY the JSON array."""
 
-    model = genai.GenerativeModel('gemini-2.0-flash-exp')
+    model = genai.GenerativeModel(select_model_name())
     response = model.generate_content(prompt)
 
     # Parse the response

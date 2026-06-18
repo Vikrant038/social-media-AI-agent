@@ -136,6 +136,8 @@ social-media-AI-agent/
 ## Notes
 
 - The transcript is truncated to ~4000 characters before generation to stay efficient.
-- `gemini-2.0-flash-exp` is used by default; change the model id in
-  `social_media_agent.py` if needed.
-- Your data is processed in-session and not stored.
+- The Gemini model is selected automatically from those your key can access
+  (preferring `gemini-2.5-flash` / `gemini-2.0-flash`), so a retired model id
+  never breaks the app. Adjust `PREFERRED_MODELS` in `social_media_agent.py`.
+- A user-supplied key (BYOK) is saved in your browser's `localStorage` so it
+  persists across refreshes; clear it anytime with the sidebar button.
