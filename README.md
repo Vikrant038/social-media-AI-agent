@@ -6,6 +6,9 @@ for **LinkedIn, Instagram, Twitter/X, and Facebook** from the video's transcript
 
 Built with **Streamlit**.
 
+> 📐 Curious how this was built — the bugs we hunted, the trade-offs, and the
+> system design? See **[DESIGN.md](DESIGN.md)**.
+
 ---
 
 ## Features
@@ -17,6 +20,10 @@ Built with **Streamlit**.
 - **One-click copy & download** — real clipboard copy plus `.txt` / `.json` downloads.
 - **Results persist** — copying or downloading no longer wipes the generated content.
 - **Cached transcripts** — repeated runs on the same video skip the refetch.
+- **Platform-tuned output** — each post follows that network's conventions
+  (Twitter's 280-char cap, LinkedIn hook + CTA + hashtags, Instagram emoji +
+  hashtag block, Facebook conversational tone), generated via Gemini's reliable
+  JSON mode.
 - **Bring your own key (BYOK)** — users can paste their own Gemini key in the sidebar;
   it's used only for their session and never stored, so a public deployment doesn't
   have to pay for everyone's generations.
@@ -117,6 +124,7 @@ social-media-AI-agent/
 ├── .streamlit/
 │   └── secrets.toml.example     # Streamlit secrets template
 ├── PLAN.md                      # Improvement plan / project map
+├── DESIGN.md                    # Engineering journey: problems, decisions, design
 └── README.md
 ```
 

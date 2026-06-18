@@ -135,6 +135,38 @@ def _build_example_structure(platforms: List[str]) -> str:
     return "[\n" + ",\n".join(items) + "\n]"
 
 
+# Per-platform writing guidance so each post follows that network's conventions
+# (length, tone, hashtags, emoji, CTA) instead of generic "make it engaging" text.
+PLATFORM_SPECS = {
+    "LinkedIn": (
+        "Professional, insight-driven thought-leadership. Open with a strong hook line, "
+        "use short paragraphs, end with a question or call-to-action, and add 3-5 relevant "
+        "hashtags. ~150-250 words. Minimal or no emoji."
+    ),
+    "Instagram": (
+        "Casual, visual and punchy caption. Start with an attention-grabbing first line, "
+        "use tasteful emoji, keep it scannable, end with a CTA, and add 8-12 niche hashtags "
+        "on a new line. ~80-150 words."
+    ),
+    "Twitter": (
+        "A single concise tweet UNDER 280 characters total (including hashtags). Punchy, "
+        "one clear idea, 1-3 hashtags max. No thread."
+    ),
+    "Facebook": (
+        "Conversational and community-oriented. A relatable hook, 2-4 short sentences, an "
+        "inviting question to drive comments, and 0-2 hashtags. ~60-120 words."
+    ),
+}
+
+
+def _build_platform_guidance(platforms: List[str]) -> str:
+    """Bullet list of per-platform rules for the requested platforms."""
+    return "\n".join(
+        f"- {p}: {PLATFORM_SPECS.get(p, 'Engaging, platform-appropriate content.')}"
+        for p in platforms
+    )
+
+
 def generate_social_content(
     transcript: str,
     platforms: List[str],
@@ -159,6 +191,7 @@ def generate_social_content(
 
     platforms_str = ", ".join(platforms)
     example_structure = _build_example_structure(platforms)
+    guidance = _build_platform_guidance(platforms)
 
     # Shared, strict constraint so the model never invents extra platforms.
     constraint = (
@@ -167,40 +200,41 @@ def generate_social_content(
         f"one per platform listed above, using the exact platform names given."
     )
 
-    if custom_query:
-        prompt = f"""{custom_query}
+    extra_instructions = (
+        f"\n\nAdditional user instructions (apply these too):\n{custom_query}"
+        if custom_query else ""
+    )
+
+    prompt = f"""You are an expert social media content strategist. Using the key insights \
+from the video transcript below, write ready-to-publish posts.
 
 Video Transcript:
 {transcript}
 
 {constraint}
 
-For each platform, provide engaging content optimized for that platform.
+Follow these platform-specific rules precisely:
+{guidance}
+
+General rules:
+- Base the content on the actual insights in the transcript; do not invent facts.
+- Make each post self-contained and ready to publish as-is.
+- Respect the length limits above (especially Twitter's 280-character cap).{extra_instructions}
 
 Return your response as a JSON array with this exact structure:
-{example_structure}
-
-Make the content platform-appropriate, engaging, and shareable. Return ONLY the JSON array."""
-    else:
-        prompt = f"""You are a talented social media content writer.
-
-Video Transcript:
-{transcript}
-
-{constraint}
-
-For each platform, create content that is:
-- Platform-appropriate (LinkedIn: professional, Instagram: visual/casual, Twitter: concise, Facebook: conversational)
-- Engaging and shareable
-- Based on the key insights from the transcript
-
-Return your response as a JSON array with this exact structure:
-{example_structure}
-
-Return ONLY the JSON array."""
+{example_structure}"""
 
     model = genai.GenerativeModel(select_model_name())
-    response = model.generate_content(prompt)
+    # Native JSON mode: forces syntactically valid JSON, removing the fragile
+    # code-fence stripping that could break parsing.
+    try:
+        response = model.generate_content(
+            prompt,
+            generation_config={"response_mime_type": "application/json"},
+        )
+    except Exception:
+        # Older models may not support JSON mode; fall back to a plain call.
+        response = model.generate_content(prompt)
 
     # Parse the response
     try:
