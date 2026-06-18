@@ -1,105 +1,131 @@
+# AI Social Media Content Generator
 
+Turn any YouTube video into engaging, platform-tailored social media posts. Paste a
+video ID, pick your platforms, and a Google **Gemini** model writes optimized posts
+for **LinkedIn, Instagram, Twitter/X, and Facebook** from the video's transcript.
 
-# AI Agent: YouTube Transcript-Based Social Media Content Generator
+Built with **Streamlit**.
 
-***
+---
 
-## Overview
+## Features
 
-This project is a **Streamlit web application** that creates social media posts using YouTube video transcripts. It leverages OpenAI's GPT models to generate engaging, humorous, and informative posts tailored for various social media platforms.
+- **Transcript-powered** — fetches the YouTube transcript automatically (no manual copy/paste).
+- **Generates only what you select** — posts are produced strictly for the platforms you check.
+- **Custom instructions** — steer tone, focus, and formatting.
+- **Professional UI** — Material Symbols icons, a clean design system, loading and error states.
+- **One-click copy & download** — real clipboard copy plus `.txt` / `.json` downloads.
+- **Results persist** — copying or downloading no longer wipes the generated content.
+- **Cached transcripts** — repeated runs on the same video skip the refetch.
 
-***
+---
 
-## Project Layers & Workflow
+## How it works
 
-### 1. Input Understanding  
-Users provide a YouTube video transcript. The prompt instructs the AI:  
 ```
-Here is a new video transcript: video_transcript
-Generate a social media post based on my provided video transcript.
+app.py (Streamlit UI)
+  └─ Runner.run(video_id, platforms, custom_query)        social_media_agent.py
+       ├─ get_transcript(video_id)        → youtube-transcript-api  (cached)
+       ├─ truncate transcript to ~4000 chars
+       └─ generate_social_content(...)    → google-generativeai (Gemini)
+            └─ parse JSON, keep only selected platforms → posts
 ```
 
-### 2. Task Planner  
-The model used is **GPT-4o-mini**, guided with instructions:  
+The prompt instructs Gemini to return a JSON array containing **exactly** the selected
+platforms, and the response is filtered to those platforms as a defensive guard.
+
+---
+
+## Prerequisites
+
+- Python 3.9+
+- A **Gemini API key** — create one at <https://aistudio.google.com/app/apikey>
+
+---
+
+## Setup
+
+```bash
+# 1. Clone and enter the project
+git clone <your-repo-url>
+cd social-media-AI-agent
+
+# 2. Create and activate a virtual environment
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
 ```
-You are a talented content writer who writes engaging, humorous, and highly readable social media posts.  
-You will receive a video transcript and social media platforms.  
-Generate social media posts based on the transcript and platform.  
-You may also search the web for updated information and add useful details.
+
+### Configure your API key
+
+Choose **one** of the following:
+
+**Option A — Streamlit secrets (recommended)**
+```bash
+cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+# then edit .streamlit/secrets.toml and paste your key
 ```
 
-This functionality is implemented as the first tool in the agent.
+**Option B — environment file**
+```bash
+cp .env.example .env
+# then edit .env and paste your key
+```
 
-### 3. Output Generator  
-Before generating output, the agent ensures:  
-- The YouTube video ID is correctly fetched.  
-- The AI model is accessible.  
-- The API key is present and valid.
+Both `.env` and `.streamlit/secrets.toml` are git-ignored and never committed.
 
-***
+---
 
-## Learning Insights
+## Run
 
-### About Python Virtual Environments  
-- A virtual environment isolates project dependencies and Python versions to avoid conflicts.  
-- Useful when working on multiple projects requiring different packages or versions.  
-- Prevents affecting the system's global Python installation.  
+```bash
+streamlit run app.py
+```
 
-**Creating a virtual environment:**  
-- Windows Command Prompt:  
-  ```
-  python -m venv .venv
-  ```
-- PowerShell:  
-  ```
-  cd to project directory  
-  py -m venv .venv
-  ```
+Then open <http://localhost:8501>.
 
-### Key Project Learnings  
-- How to integrate AI in Python code effectively.  
-- Importance of virtual environments for clean, efficient development.  
-- Automate basic tasks to save time and improve productivity using AI.  
-- Use Streamlit for building interactive web apps running in the browser.  
-- Explore offline large language models (LLMs) for local AI processing without token limits.
+### Usage
 
-***
+1. Copy the **video ID** — the part after `v=` in a YouTube URL
+   (`youtube.com/watch?v=`**`OZ5OZZZ2cvk`**).
+2. (Optional) Add **custom instructions**.
+3. Select one or more **platforms**.
+4. Click **Generate content**, then copy or download the posts.
 
-## Challenges Faced
+---
 
-1. **Virtual environment activation syntax differed on Windows vs macOS.**  
-   Realized the need to check platform-specific commands for venv activation.
+## Project structure
 
-2. **Fetching video ID from URLs was inefficient.**  
-   Directly using the video ID improved processing speed and output generation.
+```
+social-media-AI-agent/
+├── app.py                       # Streamlit UI
+├── social_media_agent.py        # Transcript fetch + Gemini generation logic
+├── requirements.txt             # Pinned dependencies
+├── .env.example                 # Env-var config template
+├── .streamlit/
+│   └── secrets.toml.example     # Streamlit secrets template
+├── PLAN.md                      # Improvement plan / project map
+└── README.md
+```
 
-3. **YouTube transcript API errors due to missing or outdated installations.**  
-   Reinstalling the API package resolved recognition issues.
+---
 
-4. **Insufficient tokens error while running the AI model.**  
-   Learned that many LLMs require billing or token purchase for usage.  
-   Explored local AI models like Ollama that run offline without ongoing costs.
+## Troubleshooting
 
-***
+| Problem | Fix |
+| --- | --- |
+| *"Gemini API key not configured"* | Add your key to `.streamlit/secrets.toml` or `.env`. |
+| Transcript error / empty result | The video may have transcripts disabled or no English captions. Try another video. |
+| Wrong/extra platforms generated | Already fixed — only selected platforms are returned. Re-pull the latest code. |
+| Copy button does nothing | Clipboard access requires a secure context (localhost is fine); otherwise use `Ctrl+C`. |
 
-## About Streamlit
+---
 
-Streamlit is a powerful tool for quickly building data and AI-powered web apps with minimal coding. It provides an intuitive browser interface that enhances user experience and simplifies app deployment.
+## Notes
 
-***
-
-## Summary
-
-This project offered hands-on experience in integrating AI with Python, managing project environments, and building user-friendly applications. The challenges strengthened problem-solving skills and introduced modern AI tools and practices that are key to efficient development workflows.
-
-***
-
-Feel free to explore and contribute!
-
-
-
-
-
-
-
-
+- The transcript is truncated to ~4000 characters before generation to stay efficient.
+- `gemini-2.0-flash-exp` is used by default; change the model id in
+  `social_media_agent.py` if needed.
+- Your data is processed in-session and not stored.
