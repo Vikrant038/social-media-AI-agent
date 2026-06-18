@@ -29,6 +29,8 @@ def _load_api_key() -> str:
 
 
 GEMINI_API_KEY = _load_api_key()
+# True when the deployment ships its own key (users need not bring their own).
+HAS_SERVER_KEY = bool(GEMINI_API_KEY)
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
@@ -98,15 +100,27 @@ def _build_example_structure(platforms: List[str]) -> str:
     return "[\n" + ",\n".join(items) + "\n]"
 
 
-def generate_social_content(transcript: str, platforms: List[str], custom_query: str = None) -> AgentResult:
+def generate_social_content(
+    transcript: str,
+    platforms: List[str],
+    custom_query: str = None,
+    api_key: str = None,
+) -> AgentResult:
     """
     Generate social media content using Gemini for the EXACTLY selected platforms.
+
+    Args:
+        api_key: Optional user-supplied Gemini key (bring-your-own-key). When
+                 provided it overrides the server's configured key for this call.
     """
-    if not GEMINI_API_KEY:
+    active_key = api_key or GEMINI_API_KEY
+    if not active_key:
         raise RuntimeError(
-            "Gemini API key not configured. Set GEMINI_API_KEY in "
-            ".streamlit/secrets.toml or as an environment variable."
+            "Gemini API key not configured. Enter your own key in the sidebar, "
+            "or set GEMINI_API_KEY in .streamlit/secrets.toml or the environment."
         )
+    # Configure for this call (BYOK keys are never persisted server-side).
+    genai.configure(api_key=active_key)
 
     platforms_str = ", ".join(platforms)
     example_structure = _build_example_structure(platforms)
@@ -211,27 +225,35 @@ class Runner:
     """Simple runner to replace OpenAI's Runner."""
     
     @staticmethod
-    def run(video_id: str, platforms: List[str], custom_query: str = None) -> AgentResult:
+    def run(
+        video_id: str,
+        platforms: List[str],
+        custom_query: str = None,
+        api_key: str = None,
+    ) -> AgentResult:
         """
         Run the content generation process.
-        
+
         Args:
             video_id: YouTube video ID
             platforms: List of platform names
             custom_query: Optional custom query from user
-            
+            api_key: Optional user-supplied Gemini key (bring-your-own-key)
+
         Returns:
             AgentResult with generated posts
         """
         # Get transcript (cached when running under Streamlit)
         transcript = _cached_get_transcript(video_id)
-        
+
         # Truncate if too long
         transcript_short = transcript[:4000] if len(transcript) > 4000 else transcript
-        
+
         # Generate content
-        result = generate_social_content(transcript_short, platforms, custom_query)
-        
+        result = generate_social_content(
+            transcript_short, platforms, custom_query, api_key=api_key
+        )
+
         return result
 
 

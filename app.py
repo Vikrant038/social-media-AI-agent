@@ -6,7 +6,7 @@ import json
 import streamlit as st
 import streamlit.components.v1 as components
 
-from social_media_agent import Runner, ItemHelpers
+from social_media_agent import Runner, ItemHelpers, HAS_SERVER_KEY
 
 
 # --------------------------------------------------------------
@@ -238,6 +238,37 @@ st.markdown(
 # --------------------------------------------------------------
 with st.sidebar:
     st.markdown(f"## {icon('share')}Content Generator", unsafe_allow_html=True)
+
+    # ----- Bring your own Gemini key (BYOK) -----
+    st.markdown(f"#### {icon('key')}Gemini API key", unsafe_allow_html=True)
+    user_api_key = st.text_input(
+        "Your Gemini API key",
+        type="password",
+        placeholder="AIza...",
+        help="Used only for your session and never stored. "
+             "Get one at aistudio.google.com/app/apikey",
+        label_visibility="collapsed",
+    ).strip()
+
+    if user_api_key:
+        st.markdown(
+            f'<span class="pill" style="color:#065F46;border-color:#A7F3D0;background:#ECFDF5">'
+            f'{icon("check_circle")}Using your key</span>',
+            unsafe_allow_html=True,
+        )
+    elif HAS_SERVER_KEY:
+        st.caption("Optional — leave blank to use the app's shared key.")
+    else:
+        st.markdown(
+            f'<span class="pill" style="color:#991B1B;border-color:#FECACA;background:#FEF2F2">'
+            f'{icon("error")}Key required to generate</span>',
+            unsafe_allow_html=True,
+        )
+    st.markdown(
+        "[Get a free key &#8599;](https://aistudio.google.com/app/apikey)",
+    )
+    st.markdown("---")
+
     st.markdown(f"#### {icon('menu_book')}How to use", unsafe_allow_html=True)
     st.markdown(
         """
@@ -313,17 +344,21 @@ with st.container(border=True):
         ) if chosen
     ]
 
+    has_key = HAS_SERVER_KEY or bool(user_api_key)
+
     st.markdown("<br>", unsafe_allow_html=True)
     bcol1, bcol2, bcol3 = st.columns([1, 2, 1])
     with bcol2:
         generate_clicked = st.button(
             "Generate content",
-            disabled=not (video_id and selected_platforms),
+            disabled=not (video_id and selected_platforms and has_key),
             use_container_width=True,
             key="generate_button",
         )
 
-    if not video_id:
+    if not has_key:
+        st.caption("Add your Gemini API key in the sidebar to enable generation.")
+    elif not video_id:
         st.caption("Enter a video ID to enable generation.")
     elif not selected_platforms:
         st.caption("Select at least one platform to enable generation.")
@@ -341,6 +376,7 @@ if generate_clicked:
                 video_id=video_id,
                 platforms=selected_platforms,
                 custom_query=query if query.strip() else None,
+                api_key=user_api_key or None,
             )
             st.session_state.result_video_id = video_id
             st.toast("Content generated successfully", icon="✅")

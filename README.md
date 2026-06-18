@@ -17,6 +17,9 @@ Built with **Streamlit**.
 - **One-click copy & download** — real clipboard copy plus `.txt` / `.json` downloads.
 - **Results persist** — copying or downloading no longer wipes the generated content.
 - **Cached transcripts** — repeated runs on the same video skip the refetch.
+- **Bring your own key (BYOK)** — users can paste their own Gemini key in the sidebar;
+  it's used only for their session and never stored, so a public deployment doesn't
+  have to pay for everyone's generations.
 
 ---
 
@@ -60,7 +63,14 @@ pip install -r requirements.txt
 
 ### Configure your API key
 
-Choose **one** of the following:
+You have three options:
+
+- **In the app (BYOK)** — just run the app and paste a Gemini key into the sidebar.
+  Nothing to configure ahead of time. The key lives only in that browser session.
+- **Streamlit secrets** or **environment file** — set a shared server key so users
+  don't need to bring their own (below).
+
+For a shared server key, choose **one** of the following:
 
 **Option A — Streamlit secrets (recommended)**
 ```bash
