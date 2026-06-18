@@ -41,133 +41,55 @@ PLATFORM_ICONS = {
 # --------------------------------------------------------------
 # Design system: fonts, icon library and custom CSS
 # --------------------------------------------------------------
+# IMPORTANT: this block must be left-aligned (column 0) with NO blank lines.
+# Markdown treats 4-space-indented lines as code, and a blank line ends an
+# HTML block, either of which makes Streamlit print the CSS as literal text.
 st.markdown(
-    """
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" />
-    <style>
-    :root {
-        --primary: #4F46E5;
-        --primary-dark: #4338CA;
-        --accent: #10B981;
-        --danger: #EF4444;
-        --bg: #F8FAFC;
-        --surface: #FFFFFF;
-        --border: #E2E8F0;
-        --text: #0F172A;
-        --muted: #64748B;
-        --radius: 12px;
-        --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
-        --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.08);
-    }
-
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-    .stApp { background: var(--bg); }
-
-    .material-symbols-outlined {
-        vertical-align: middle;
-        font-size: 1.2rem;
-        line-height: 1;
-        position: relative;
-        top: -1px;
-        margin-right: 0.4rem;
-        color: var(--primary);
-    }
-
-    /* Hero */
-    .hero {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 2rem 2.5rem;
-        margin-bottom: 1.75rem;
-        box-shadow: var(--shadow);
-        display: flex;
-        align-items: center;
-        gap: 1.25rem;
-    }
-    .hero-badge {
-        flex: 0 0 auto;
-        width: 56px; height: 56px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        display: flex; align-items: center; justify-content: center;
-    }
-    .hero-badge .material-symbols-outlined { color: #fff; font-size: 1.9rem; margin: 0; top: 0; }
-    .hero h1 { font-size: 1.7rem; font-weight: 700; color: var(--text); margin: 0; }
-    .hero p { color: var(--muted); margin: 0.25rem 0 0; font-size: 0.97rem; }
-
-    /* Section titles */
-    .section-title {
-        font-size: 1.05rem; font-weight: 600; color: var(--text);
-        margin: 0.5rem 0 0.75rem; display: flex; align-items: center;
-    }
-
-    /* Cards via Streamlit bordered containers */
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        background: var(--surface);
-        border-radius: var(--radius) !important;
-        box-shadow: var(--shadow);
-    }
-
-    /* Primary button */
-    .stButton > button {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        color: #fff; border: none; padding: 0.65rem 1.5rem;
-        font-size: 1rem; font-weight: 600; border-radius: 10px;
-        width: 100%; transition: all 0.2s ease;
-    }
-    .stButton > button:hover:enabled {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
-    }
-    .stButton > button:disabled { opacity: 0.5; }
-
-    .stDownloadButton > button {
-        background: var(--surface); color: var(--text);
-        border: 1px solid var(--border); padding: 0.55rem 1rem;
-        border-radius: 9px; font-weight: 600; width: 100%;
-    }
-    .stDownloadButton > button:hover { border-color: var(--primary); color: var(--primary); }
-
-    /* Inputs */
-    .stTextArea textarea, .stTextInput input {
-        border-radius: 10px; border: 1.5px solid var(--border);
-    }
-    .stTextArea textarea:focus, .stTextInput input:focus {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-    }
-
-    /* Pill for word count */
-    .pill {
-        display: inline-flex; align-items: center;
-        background: var(--bg); border: 1px solid var(--border);
-        color: var(--muted); border-radius: 999px;
-        padding: 0.3rem 0.7rem; font-size: 0.8rem; font-weight: 600;
-        white-space: nowrap;
-    }
-    .pill .material-symbols-outlined { font-size: 1rem; color: var(--muted); }
-
-    /* Alerts */
-    .alert { border-radius: 10px; padding: 0.85rem 1rem; font-weight: 500; margin-bottom: 1rem; display: flex; align-items: center; }
-    .alert-error { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
-    .alert-error .material-symbols-outlined { color: var(--danger); }
-    .alert-success { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; }
-    .alert-success .material-symbols-outlined { color: var(--accent); }
-
-    /* Sidebar */
-    section[data-testid="stSidebar"] { background: var(--surface); border-right: 1px solid var(--border); }
-
-    /* Footer */
-    .footer { text-align: center; padding: 1.5rem; color: var(--muted);
-        border-top: 1px solid var(--border); margin-top: 2.5rem; font-size: 0.85rem; }
-
-    #MainMenu { visibility: hidden; }
-    footer { visibility: hidden; }
-    header[data-testid="stHeader"] { background: transparent; }
-    </style>
-    """,
+"""<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" />
+<style>
+:root {
+--primary: #4F46E5;
+--primary-dark: #4338CA;
+--accent: #10B981;
+--danger: #EF4444;
+--bg: #F8FAFC;
+--surface: #FFFFFF;
+--border: #E2E8F0;
+--text: #0F172A;
+--muted: #64748B;
+--radius: 12px;
+--shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+.stApp { background: var(--bg); }
+.material-symbols-outlined { vertical-align: middle; font-size: 1.2rem; line-height: 1; position: relative; top: -1px; margin-right: 0.4rem; color: var(--primary); }
+.hero { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem 2.5rem; margin-bottom: 1.75rem; box-shadow: var(--shadow); display: flex; align-items: center; gap: 1.25rem; }
+.hero-badge { flex: 0 0 auto; width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; align-items: center; justify-content: center; }
+.hero-badge .material-symbols-outlined { color: #fff; font-size: 1.9rem; margin: 0; top: 0; }
+.hero h1 { font-size: 1.7rem; font-weight: 700; color: var(--text); margin: 0; }
+.hero p { color: var(--muted); margin: 0.25rem 0 0; font-size: 0.97rem; }
+.section-title { font-size: 1.05rem; font-weight: 600; color: var(--text); margin: 0.5rem 0 0.75rem; display: flex; align-items: center; }
+div[data-testid="stVerticalBlockBorderWrapper"] { background: var(--surface); border-radius: var(--radius) !important; box-shadow: var(--shadow); }
+.stButton > button { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; border: none; padding: 0.65rem 1.5rem; font-size: 1rem; font-weight: 600; border-radius: 10px; width: 100%; transition: all 0.2s ease; }
+.stButton > button:hover:enabled { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35); }
+.stButton > button:disabled { opacity: 0.5; }
+.stDownloadButton > button { background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 0.55rem 1rem; border-radius: 9px; font-weight: 600; width: 100%; }
+.stDownloadButton > button:hover { border-color: var(--primary); color: var(--primary); }
+.stTextArea textarea, .stTextInput input { border-radius: 10px; border: 1.5px solid var(--border); }
+.stTextArea textarea:focus, .stTextInput input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
+.pill { display: inline-flex; align-items: center; background: var(--bg); border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 0.3rem 0.7rem; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.pill .material-symbols-outlined { font-size: 1rem; color: var(--muted); }
+.alert { border-radius: 10px; padding: 0.85rem 1rem; font-weight: 500; margin-bottom: 1rem; display: flex; align-items: center; }
+.alert-error { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+.alert-error .material-symbols-outlined { color: var(--danger); }
+.alert-success { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; }
+.alert-success .material-symbols-outlined { color: var(--accent); }
+section[data-testid="stSidebar"] { background: var(--surface); border-right: 1px solid var(--border); }
+.footer { text-align: center; padding: 1.5rem; color: var(--muted); border-top: 1px solid var(--border); margin-top: 2.5rem; font-size: 0.85rem; }
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+header[data-testid="stHeader"] { background: transparent; }
+</style>""",
     unsafe_allow_html=True,
 )
 
@@ -220,15 +142,13 @@ def copy_button(text: str, key: str):
 # Hero
 # --------------------------------------------------------------
 st.markdown(
-    f"""
-    <div class="hero">
-        <div class="hero-badge">{icon('rocket_launch')}</div>
-        <div>
-            <h1>AI Social Media Content Generator</h1>
-            <p>Transform YouTube videos into engaging, platform-tailored social posts in seconds.</p>
-        </div>
-    </div>
-    """,
+f"""<div class="hero">
+<div class="hero-badge">{icon('rocket_launch')}</div>
+<div>
+<h1>AI Social Media Content Generator</h1>
+<p>Transform YouTube videos into engaging, platform-tailored social posts in seconds.</p>
+</div>
+</div>""",
     unsafe_allow_html=True,
 )
 
@@ -461,11 +381,6 @@ if result:
 # Footer
 # --------------------------------------------------------------
 st.markdown(
-    f"""
-    <div class="footer">
-        Built with Streamlit · Powered by Google Gemini &amp; the YouTube Transcript API<br>
-        <span style="opacity:0.8">Your data is processed securely and not stored.</span>
-    </div>
-    """,
+"""<div class="footer">Built with Streamlit · Powered by Google Gemini &amp; the YouTube Transcript API<br><span style="opacity:0.8">Your data is processed securely and not stored.</span></div>""",
     unsafe_allow_html=True,
 )
