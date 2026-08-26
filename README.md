@@ -1,5 +1,9 @@
 # AI Social Media Content Generator
 
+[![PyPI Version](https://img.shields.io/pypi/v/social-media-ai-agent?label=package&logo=python)]()
+[![Python](https://img.shields.io/pypi/pyversions/social-media-ai-agent)]()
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
+
 Turn any YouTube video into engaging, platform-tailored social media posts. Paste a
 video ID, pick your platforms, and a Google **Gemini** model writes optimized posts
 for **LinkedIn, Instagram, Twitter/X, and Facebook** from the video's transcript.
