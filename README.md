@@ -1,6 +1,6 @@
 # AI Social Media Content Generator
 
-[![PyPI Version](https://img.shields.io/pypi/v/social-media-ai-agent?label=package&logo=python)]()
+[![PyPI Version](https://img.shields.io/pypi/v/social-media-ai-agent?llogo=python)]()
 [![Python](https://img.shields.io/pypi/pyversions/social-media-ai-agent)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
 
