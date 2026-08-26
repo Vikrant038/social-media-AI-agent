@@ -11,6 +11,8 @@ Built with **Streamlit** and engineered from **First Principles of Reasoning**.
 
 > 📐 Deep dive into the architectural decisions, bug investigations, contrast physics, and system design in **[docs/DESIGN.md](docs/DESIGN.md)**.
 
+<img width="1441" height="599" alt="image" src="https://github.com/user-attachments/assets/c6dfdb63-d51e-4ee6-9415-d0a82b60ff80" />
+
 ---
 
 ## The Problem
