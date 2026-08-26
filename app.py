@@ -55,35 +55,118 @@ st.markdown(
 --danger: #EF4444;
 --bg: #F8FAFC;
 --surface: #FFFFFF;
---border: #E2E8F0;
+--surface-secondary: #F1F5F9;
+--border: #CBD5E1;
 --text: #0F172A;
+--text-secondary: #334155;
 --muted: #64748B;
+--pill-bg: #F1F5F9;
+--pill-text: #334155;
+--pill-success-bg: #ECFDF5;
+--pill-success-border: #A7F3D0;
+--pill-success-text: #065F46;
+--pill-error-bg: #FEF2F2;
+--pill-error-border: #FECACA;
+--pill-error-text: #991B1B;
+--alert-error-bg: #FEF2F2;
+--alert-error-border: #FECACA;
+--alert-error-text: #991B1B;
+--alert-success-bg: #ECFDF5;
+--alert-success-border: #A7F3D0;
+--alert-success-text: #065F46;
 --radius: 12px;
 --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
 }
+@media (prefers-color-scheme: dark) {
+:root {
+--primary: #818CF8;
+--primary-dark: #6366F1;
+--accent: #34D399;
+--danger: #F87171;
+--bg: #0B0F19;
+--surface: #1E293B;
+--surface-secondary: #0F172A;
+--border: #334155;
+--text: #F8FAFC;
+--text-secondary: #E2E8F0;
+--muted: #94A3B8;
+--pill-bg: #0F172A;
+--pill-text: #E2E8F0;
+--pill-success-bg: rgba(16, 185, 129, 0.18);
+--pill-success-border: rgba(16, 185, 129, 0.4);
+--pill-success-text: #6EE7B7;
+--pill-error-bg: rgba(239, 68, 68, 0.18);
+--pill-error-border: rgba(239, 68, 68, 0.4);
+--pill-error-text: #FCA5A5;
+--alert-error-bg: rgba(239, 68, 68, 0.18);
+--alert-error-border: rgba(239, 68, 68, 0.4);
+--alert-error-text: #FCA5A5;
+--alert-success-bg: rgba(16, 185, 129, 0.18);
+--alert-success-border: rgba(16, 185, 129, 0.4);
+--alert-success-text: #6EE7B7;
+--shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+}
+[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"] {
+--primary: #818CF8;
+--primary-dark: #6366F1;
+--accent: #34D399;
+--danger: #F87171;
+--bg: #0B0F19;
+--surface: #1E293B;
+--surface-secondary: #0F172A;
+--border: #334155;
+--text: #F8FAFC;
+--text-secondary: #E2E8F0;
+--muted: #94A3B8;
+--pill-bg: #0F172A;
+--pill-text: #E2E8F0;
+--pill-success-bg: rgba(16, 185, 129, 0.18);
+--pill-success-border: rgba(16, 185, 129, 0.4);
+--pill-success-text: #6EE7B7;
+--pill-error-bg: rgba(239, 68, 68, 0.18);
+--pill-error-border: rgba(239, 68, 68, 0.4);
+--pill-error-text: #FCA5A5;
+--alert-error-bg: rgba(239, 68, 68, 0.18);
+--alert-error-border: rgba(239, 68, 68, 0.4);
+--alert-error-text: #FCA5A5;
+--alert-success-bg: rgba(16, 185, 129, 0.18);
+--alert-success-border: rgba(16, 185, 129, 0.4);
+--alert-success-text: #6EE7B7;
+--shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-.stApp { background: var(--bg); }
+.stApp { background: var(--bg); color: var(--text); }
 .material-symbols-outlined { vertical-align: middle; font-size: 1.2rem; line-height: 1; position: relative; top: -1px; margin-right: 0.4rem; color: var(--primary); }
 .hero { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem 2.5rem; margin-bottom: 1.75rem; box-shadow: var(--shadow); display: flex; align-items: center; gap: 1.25rem; }
 .hero-badge { flex: 0 0 auto; width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; align-items: center; justify-content: center; }
-.hero-badge .material-symbols-outlined { color: #fff; font-size: 1.9rem; margin: 0; top: 0; }
-.hero h1 { font-size: 1.7rem; font-weight: 700; color: var(--text); margin: 0; }
-.hero p { color: var(--muted); margin: 0.25rem 0 0; font-size: 0.97rem; }
-.section-title { font-size: 1.05rem; font-weight: 600; color: var(--text); margin: 0.5rem 0 0.75rem; display: flex; align-items: center; }
-div[data-testid="stVerticalBlockBorderWrapper"] { background: var(--surface); border-radius: var(--radius) !important; box-shadow: var(--shadow); }
-.stButton > button { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; border: none; padding: 0.65rem 1.5rem; font-size: 1rem; font-weight: 600; border-radius: 10px; width: 100%; transition: all 0.2s ease; }
+.hero-badge .material-symbols-outlined { color: #fff !important; font-size: 1.9rem; margin: 0; top: 0; }
+.hero h1 { font-size: 1.7rem; font-weight: 700; color: var(--text) !important; margin: 0; }
+.hero p { color: var(--muted) !important; margin: 0.25rem 0 0; font-size: 0.97rem; }
+.section-title { font-size: 1.05rem; font-weight: 600; color: var(--text) !important; margin: 0.5rem 0 0.75rem; display: flex; align-items: center; }
+div[data-testid="stVerticalBlockBorderWrapper"] { background: var(--surface); border-radius: var(--radius) !important; box-shadow: var(--shadow); border: 1px solid var(--border) !important; }
+div[data-testid="stMarkdownContainer"] p, div[data-testid="stMarkdownContainer"] span, div[data-testid="stMarkdownContainer"] li { color: var(--text); }
+label[data-testid="stWidgetLabel"] p, label[data-testid="stWidgetLabel"] span { color: var(--text) !important; font-weight: 500; }
+[data-testid="stCaptionContainer"] p, [data-testid="stCaptionContainer"] span { color: var(--muted) !important; }
+[data-testid="stMetricLabel"] p, [data-testid="stMetricLabel"] span { color: var(--muted) !important; }
+[data-testid="stMetricValue"] div { color: var(--text) !important; }
+.stButton > button { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff !important; border: none; padding: 0.65rem 1.5rem; font-size: 1rem; font-weight: 600; border-radius: 10px; width: 100%; transition: all 0.2s ease; }
 .stButton > button:hover:enabled { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35); }
 .stButton > button:disabled { opacity: 0.5; }
-.stDownloadButton > button { background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 0.55rem 1rem; border-radius: 9px; font-weight: 600; width: 100%; }
-.stDownloadButton > button:hover { border-color: var(--primary); color: var(--primary); }
-.stTextArea textarea, .stTextInput input { border-radius: 10px; border: 1.5px solid var(--border); }
-.stTextArea textarea:focus, .stTextInput input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
-.pill { display: inline-flex; align-items: center; background: var(--bg); border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 0.3rem 0.7rem; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.stDownloadButton > button { background: var(--surface); color: var(--text) !important; border: 1px solid var(--border); padding: 0.55rem 1rem; border-radius: 9px; font-weight: 600; width: 100%; }
+.stDownloadButton > button:hover { border-color: var(--primary); color: var(--primary) !important; }
+.stTextArea textarea, .stTextInput input { background: var(--surface) !important; color: var(--text) !important; border-radius: 10px; border: 1.5px solid var(--border) !important; }
+.stTextArea textarea:focus, .stTextInput input:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
+.pill { display: inline-flex; align-items: center; background: var(--pill-bg); border: 1px solid var(--border); color: var(--pill-text) !important; border-radius: 999px; padding: 0.3rem 0.7rem; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
 .pill .material-symbols-outlined { font-size: 1rem; color: var(--muted); }
+.pill.pill-success { background: var(--pill-success-bg) !important; border-color: var(--pill-success-border) !important; color: var(--pill-success-text) !important; }
+.pill.pill-success .material-symbols-outlined { color: var(--pill-success-text) !important; }
+.pill.pill-error { background: var(--pill-error-bg) !important; border-color: var(--pill-error-border) !important; color: var(--pill-error-text) !important; }
+.pill.pill-error .material-symbols-outlined { color: var(--pill-error-text) !important; }
 .alert { border-radius: 10px; padding: 0.85rem 1rem; font-weight: 500; margin-bottom: 1rem; display: flex; align-items: center; }
-.alert-error { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+.alert-error { background: var(--alert-error-bg); border: 1px solid var(--alert-error-border); color: var(--alert-error-text); }
 .alert-error .material-symbols-outlined { color: var(--danger); }
-.alert-success { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; }
+.alert-success { background: var(--alert-success-bg); border: 1px solid var(--alert-success-border); color: var(--alert-success-text); }
 .alert-success .material-symbols-outlined { color: var(--accent); }
 section[data-testid="stSidebar"] { background: var(--surface); border-right: 1px solid var(--border); }
 .footer { text-align: center; padding: 1.5rem; color: var(--muted); border-top: 1px solid var(--border); margin-top: 2.5rem; font-size: 0.85rem; }
@@ -114,14 +197,47 @@ def alert(kind: str, icon_name: str, message: str):
 
 
 def copy_button(text: str, key: str):
-    """A real clipboard-copy button using navigator.clipboard."""
+    """A real clipboard-copy button using navigator.clipboard with adaptive light/dark theme."""
     safe = json.dumps(text)  # safely escape for embedding in JS
     components.html(
         f"""
-        <button id="btn_{key}" style="
-            width:100%;padding:0.55rem 1rem;border-radius:9px;cursor:pointer;
-            border:1px solid #E2E8F0;background:#fff;color:#0F172A;
-            font-weight:600;font-family:Inter,sans-serif;font-size:0.9rem;">
+        <style>
+        :root {{
+            --btn-bg: #FFFFFF;
+            --btn-border: #CBD5E1;
+            --btn-text: #0F172A;
+            --btn-hover-border: #4F46E5;
+            --btn-hover-text: #4F46E5;
+        }}
+        @media (prefers-color-scheme: dark) {{
+            :root {{
+                --btn-bg: #1E293B;
+                --btn-border: #334155;
+                --btn-text: #F8FAFC;
+                --btn-hover-border: #818CF8;
+                --btn-hover-text: #818CF8;
+            }}
+        }}
+        body {{ margin: 0; background: transparent; font-family: 'Inter', -apple-system, sans-serif; }}
+        .copy-btn {{
+            width: 100%;
+            padding: 0.55rem 1rem;
+            border-radius: 9px;
+            cursor: pointer;
+            border: 1px solid var(--btn-border);
+            background: var(--btn-bg);
+            color: var(--btn-text);
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }}
+        .copy-btn:hover {{
+            border-color: var(--btn-hover-border);
+            color: var(--btn-hover-text);
+        }}
+        </style>
+        <button id="btn_{key}" class="copy-btn">
             Copy
         </button>
         <script>
@@ -189,23 +305,27 @@ with st.sidebar:
 
     user_api_key = typed_key
 
+    def _clear_api_key():
+        local_storage.deleteItem("gemini_api_key")
+        st.session_state["api_key_field"] = ""
+        st.session_state["_byok_seeded"] = True
+
     if user_api_key:
         st.markdown(
-            f'<span class="pill" style="color:#065F46;border-color:#A7F3D0;background:#ECFDF5">'
-            f'{icon("check_circle")}Key saved in this browser</span>',
+            f'<span class="pill pill-success">{icon("check_circle")}Key saved in this browser</span>',
             unsafe_allow_html=True,
         )
-        if st.button("Clear saved key", use_container_width=True, key="clear_key"):
-            local_storage.deleteItem("gemini_api_key")
-            st.session_state["api_key_field"] = ""
-            st.session_state["_byok_seeded"] = True  # don't re-seed from stale storage
-            st.rerun()
+        st.button(
+            "Clear saved key",
+            use_container_width=True,
+            key="clear_key",
+            on_click=_clear_api_key,
+        )
     elif HAS_SERVER_KEY:
         st.caption("Optional — leave blank to use the app's shared key.")
     else:
         st.markdown(
-            f'<span class="pill" style="color:#991B1B;border-color:#FECACA;background:#FEF2F2">'
-            f'{icon("error")}Key required to generate</span>',
+            f'<span class="pill pill-error">{icon("error")}Key required to generate</span>',
             unsafe_allow_html=True,
         )
     st.markdown(

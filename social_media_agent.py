@@ -105,7 +105,7 @@ class AgentResult:
 # Preferred models, best first. We pick the first one the account can actually
 # use so a retired model id (e.g. the old gemini-2.0-flash-exp) never 404s.
 PREFERRED_MODELS = [
-    "gemini-2.5-flash",
+    "gemini-3.6-flash",
     "gemini-2.0-flash",
     "gemini-flash-latest",
     "gemini-1.5-flash",

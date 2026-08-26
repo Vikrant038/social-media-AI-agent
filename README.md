@@ -1,238 +1,235 @@
 # AI Social Media Content Generator
 
-[![PyPI Version](https://img.shields.io/pypi/v/social-media-ai-agent?llogo=python)]()
-[![Python](https://img.shields.io/pypi/pyversions/social-media-ai-agent)]()
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)]()
+[![Framework](https://img.shields.io/badge/framework-Streamlit-FF4B4B.svg)]()
+[![Model](https://img.shields.io/badge/model-Gemini%203.6%20Flash-4F46E5.svg)]()
+[![License](https://img.shields.io/badge/license-MIT-green.svg)]()
 
-Turn any YouTube video into engaging, platform-tailored social media posts. Paste a
-video ID, pick your platforms, and a Google **Gemini** model writes optimized posts
-for **LinkedIn, Instagram, Twitter/X, and Facebook** from the video's transcript.
+Transform any YouTube video into engaging, platform-tailored social media posts. Paste a video ID, select your target platforms, and Google **Gemini (prioritizing `gemini-3.6-flash`)** generates optimized, ready-to-publish posts for **LinkedIn, Instagram, Twitter/X, and Facebook** directly from the video's transcript.
 
-Built with **Streamlit**.
+Built with **Streamlit** and engineered from **First Principles of Reasoning**.
 
-> 📐 Curious how this was built — the bugs I hunted, the trade-offs, and the
-> system design? See **[docs/DESIGN.md](docs/DESIGN.md)**.
-
-<img width="1441" height="599" alt="image" src="https://github.com/user-attachments/assets/c6dfdb63-d51e-4ee6-9415-d0a82b60ff80" />
+> 📐 Deep dive into the architectural decisions, bug investigations, contrast physics, and system design in **[docs/DESIGN.md](docs/DESIGN.md)**.
 
 ---
 
-## The problem I'm solving
+## The Problem
 
-Creators and small teams publish one piece of long-form content — usually a
-YouTube video — and then have to manually rewrite it over and over for every
-social platform. That's slow, repetitive, and each platform has its own rules
-(LinkedIn wants a professional hook, Twitter has 280 characters, Instagram lives
-on emoji and hashtags). Most "AI post generators" either ignore those rules or
-spit out the same generic blob everywhere.
+Creators, marketing teams, and developers invest hours producing long-form video content, but redistributing that content across social networks requires manually reformatting it for distinct algorithms, audiences, and constraints:
+- **LinkedIn**: Professional hooks, structured whitespace, insights, and strategic hashtags (~150–250 words).
+- **Instagram**: Punchy visual caption, line breaks, emojis, strong CTA, and a niche hashtag block.
+- **Twitter/X**: High-density single post under a strict **280-character cap** (including hashtags).
+- **Facebook**: Conversational, community-focused hook designed to spark discussion.
 
-**The goal:** paste a video, pick the platforms you actually care about, and get
-back posts that are *ready to publish* and *shaped for each network* — nothing
-more, nothing less.
+Most "AI post generators" output generic summaries that ignore platform constraints, hallucinate unselected channels, or fail on dark/light UI themes.
 
-## How I thought about it
+---
 
-I treated this less like "write a script that calls an AI" and more like
-"design a small product." The reasoning, step by step, so anyone can reuse it:
+## First Principles of Reasoning: How We Built This
 
-1. **Start from the user's job, not the API.** The user wants publish-ready posts
-   for *specific* platforms. So "respect the selection exactly" and "match each
-   platform's conventions" became the two non-negotiable requirements — everything
-   else serves those.
+Rather than building by analogy ("stitch a prompt to an API wrapper"), we decomposed the problem into fundamental truths and built upward from first principles:
 
-2. **Separate the UI from the brain.** The Streamlit page ([app.py](app.py)) only
-   collects input and shows results. All the real work — fetching the transcript,
-   choosing a model, prompting Gemini, validating the output — lives in
-   [social_media_agent.py](social_media_agent.py). This keeps each side simple and
-   testable, and means you could swap the UI (or the AI provider) without rewriting
-   the other half.
+```
+                      FIRST PRINCIPLES FRAMEWORK
+                      
+  ┌─────────────────────────────────────────────────────────────────┐
+  │ 1. THE USER JOB                                                 │
+  │    • Truth: Users need publish-ready platform assets, not blobs.│
+  │    • Solution: Per-platform constraint specs & exact selection. │
+  ├─────────────────────────────────────────────────────────────────┤
+  │ 2. PROBABILISTIC LLM vs DETERMINISTIC CONTRACTS                 │
+  │    • Truth: LLMs imitate prompt examples & code fences break.   │
+  │    • Solution: Dynamic prompt schemas + JSON mode + post-filter.│
+  ├─────────────────────────────────────────────────────────────────┤
+  │ 3. MODEL LIFECYCLE & CAPABILITY DISCOVERY                       │
+  │    • Truth: Hardcoded model IDs rot over time.                  │
+  │    • Solution: Runtime list_models() prioritized to 3.6 Flash.  │
+  ├─────────────────────────────────────────────────────────────────┤
+  │ 4. STREAMLIT EXECUTION & STATE PERSISTENCE                      │
+  │    • Truth: Top-to-bottom script reruns wipe ephemeral state.   │
+  │    • Solution: Runner decoupling + session_state + BYOK storage.│
+  ├─────────────────────────────────────────────────────────────────┤
+  │ 5. COLOR CONTRAST & DUAL-THEME ACCESSIBILITY                    │
+  │    • Truth: Visual perception requires WCAG AA contrast (4.5:1).│
+  │    • Solution: Adaptive CSS tokens for Light & Dark backgrounds.│
+  └─────────────────────────────────────────────────────────────────┘
+```
 
-3. **Don't trust the model blindly — constrain *and* verify.** I tell Gemini
-   "generate exactly these platforms and no others," *and* I filter its response
-   down to the selected platforms afterwards. Asking nicely isn't enough; the code
-   enforces the contract. (This is what fixed the original bug where unselected
-   platforms still got posts.)
+### 1. The User Job (Product First Principle)
+- **Fundamental Truth**: The user's goal is to publish immediately on *selected* platforms with zero manual re-editing.
+- **Deduction**: The system must enforce strict platform isolation. Requesting only "Twitter" must never return LinkedIn or Facebook posts, and each post must obey hard platform constraints (e.g., the Twitter 280-character ceiling).
 
-4. **Make failure boring.** A missing API key, a retired model, a video with no
-   captions, or malformed JSON should each produce a clear message — never a crash
-   or a blank screen. Picking the model at runtime from `list_models()` instead of
-   hardcoding one is part of this: the app adapts instead of breaking.
+### 2. Probabilistic LLMs vs Deterministic Contracts (Engineering First Principle)
+- **Fundamental Truth**: Large Language Models are probabilistic token predictors. Static prompt examples bias outputs toward example keys regardless of instructions, and code fences (````json ... ````) can break standard deserialization.
+- **Deduction (Defense-in-Depth)**:
+  - **Dynamic Schema Construction**: Prompt examples are built dynamically from user-selected platforms at runtime.
+  - **Native JSON Mode**: `response_mime_type="application/json"` guarantees structurally valid JSON.
+  - **Post-Generation Filtering**: The backend filters the model's parsed JSON case-insensitively, strictly matching only requested platforms.
 
-5. **Respect the user's time and money.** Transcripts are cached so re-runs are
-   instant. And because API calls cost money, anyone can bring their own key
-   (BYOK), stored in their own browser so they never have to re-enter it.
+### 3. Model Discovery & Fault-Tolerant Fallback (Architecture First Principle)
+- **Fundamental Truth**: Model versions change and experimental IDs deprecate (e.g., `gemini-2.5-flash` was non-existent/retired).
+- **Deduction**: The backend queries `genai.list_models()` at runtime, verifies `generateContent` support, and selects the highest-tier available model from a preference hierarchy (`gemini-3.6-flash` → `gemini-2.0-flash` → `gemini-flash-latest` → `gemini-1.5-flash`).
 
-6. **Verify by watching it work.** I didn't trust "it returned HTTP 200." I drove
-   a real browser to screenshot the UI and even simulated typing a key + reloading
-   to prove the key persists. If I claim something works, I watched it work.
+### 4. Ephemeral State vs Client-Side Persistence (State First Principle)
+- **Fundamental Truth**: Streamlit reruns scripts from top-to-bottom on every user click, wiping unpersisted state. Additionally, public deployments should not subsidize third-party API usage.
+- **Deduction**:
+  - Results are held in `st.session_state` so downloading or copying does not reset the UI.
+  - Bring-Your-Own-Key (BYOK) persists the API key safely in the user's browser `localStorage` using an asynchronous handshake state machine.
+  - Transcripts are cached with `st.cache_data` to eliminate redundant network roundtrips.
 
-You can apply this same checklist to almost any small AI tool: *anchor on the
-user's job → split UI from logic → constrain and validate the model → fail
-gracefully → cache and respect cost → verify by observation.*
+### 5. Color Theory & Dual-Theme Accessibility (UI/UX First Principle)
+- **Fundamental Truth**: Text legibility requires adequate luminance contrast ($L_1/L_2 \ge 4.5:1$ per WCAG AA). Hardcoding light surfaces or dark text colors causes text invisibility when Streamlit or the operating system switches to Dark Mode.
+- **Deduction**:
+  - We implemented an adaptive CSS variable token system responding to `@media (prefers-color-scheme: dark)` and Streamlit's `[data-theme="dark"]`.
+  - **Light Mode**: Deep charcoal slate text (`#0F172A`, `#334155`) on crisp light surfaces (`#F8FAFC`, `#FFFFFF`).
+  - **Dark Mode**: High-luminance slate text (`#F8FAFC`, `#E2E8F0`) on deep dark slate surfaces (`#0B0F19`, `#1E293B`).
+  - Iframe components (like the custom Copy button) embed independent adaptive color schemes.
 
 ---
 
 ## Features
 
-- **Transcript-powered** — fetches the YouTube transcript automatically (no manual copy/paste).
-- **Generates only what you select** — posts are produced strictly for the platforms you check.
-- **Custom instructions** — steer tone, focus, and formatting.
-- **Professional UI** — Material Symbols icons, a clean design system, loading and error states.
-- **One-click copy & download** — real clipboard copy plus `.txt` / `.json` downloads.
-- **Results persist** — copying or downloading no longer wipes the generated content.
-- **Cached transcripts** — repeated runs on the same video skip the refetch.
-- **Platform-tuned output** — each post follows that network's conventions
-  (Twitter's 280-char cap, LinkedIn hook + CTA + hashtags, Instagram emoji +
-  hashtag block, Facebook conversational tone), generated via Gemini's reliable
-  JSON mode.
-- **Bring your own key (BYOK)** — users can paste their own Gemini key in the sidebar;
-  it's used only for their session and never stored, so a public deployment doesn't
-  have to pay for everyone's generations.
+- **Transcript-Powered**: Fetches YouTube captions automatically using `youtube-transcript-api`.
+- **Gemini 3.6 Flash Optimized**: High-speed, high-fidelity reasoning prioritizing `gemini-3.6-flash` with dynamic fallback.
+- **Strict Platform Isolation**: Generates posts exclusively for checked platforms.
+- **Platform-Tuned Formats**: Tailored prompts for LinkedIn, Instagram, Twitter/X (<280 chars), and Facebook.
+- **Adaptive Light/Dark Theme**: Contrast-safe typography and cards visible in both light and dark environments.
+- **Zero-Data-Leak BYOK**: Bring your own Gemini API key; stored strictly in your browser's `localStorage`.
+- **One-Click Real Copy**: JavaScript clipboard integration (`navigator.clipboard.writeText`) that survives reruns.
+- **Export Options**: Download individual platform `.txt` files or full `.json` payloads.
+- **IP Ban & Proxy Resilience**: Built-in support for Webshare residential proxies and generic HTTP/HTTPS proxies.
 
 ---
 
-## How it works
+## System Architecture
 
 ```
 app.py (Streamlit UI)
-  └─ Runner.run(video_id, platforms, custom_query)        social_media_agent.py
-       ├─ get_transcript(video_id)        → youtube-transcript-api  (cached)
-       ├─ truncate transcript to ~4000 chars
-       └─ generate_social_content(...)    → google-generativeai (Gemini)
-            └─ parse JSON, keep only selected platforms → posts
+  │
+  ├── Adaptive CSS Tokens (Light/Dark High-Contrast Theme)
+  ├── LocalStorage Bridge (BYOK Gemini API Key Persistence)
+  └── Runner.run(video_id, platforms, custom_query, api_key)
+        │
+        ▼
+social_media_agent.py (Backend Agent Logic)
+  ├── get_transcript(video_id)
+  │     └─ Cached via st.cache_data / Optional Proxy Routing
+  ├── select_model_name()
+  │     └─ list_models() → Prefers gemini-3.6-flash → gemini-2.0-flash → Fallback
+  └── generate_social_content(...)
+        ├─ Dynamic Prompt Synthesis (PLATFORM_SPECS)
+        ├─ Gemini JSON Mode Generation
+        └─ Defensive Post-Filtering (Strict Platform Guard)
 ```
-
-The prompt instructs Gemini to return a JSON array containing **exactly** the selected
-platforms, and the response is filtered to those platforms as a defensive guard.
 
 ---
 
 ## Prerequisites
 
-- Python 3.9+
-- A **Gemini API key** — create one at <https://aistudio.google.com/app/apikey>
+- **Python 3.9+**
+- A **Gemini API key** — obtain one free at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 
 ---
 
-## Setup
+## Setup & Installation
 
 ```bash
-# 1. Clone and enter the project
+# 1. Clone the repository
 git clone <your-repo-url>
 cd social-media-AI-agent
 
 # 2. Create and activate a virtual environment
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 
-# 3. Install dependencies
+# 3. Install pinned dependencies
 pip install -r requirements.txt
 ```
 
-### Configure your API key
+### Configure Your API Key
 
-You have three options:
+Choose **one** of the following methods:
 
-- **In the app (BYOK)** — just run the app and paste a Gemini key into the sidebar.
-  Nothing to configure ahead of time. The key lives only in that browser session.
-- **Streamlit secrets** or **environment file** — set a shared server key so users
-  don't need to bring their own (below).
-
-For a shared server key, choose **one** of the following:
-
-**Option A — Streamlit secrets (recommended)**
-```bash
-cp .streamlit/secrets.toml.example .streamlit/secrets.toml
-# then edit .streamlit/secrets.toml and paste your key
-```
-
-**Option B — environment file**
-```bash
-cp .env.example .env
-# then edit .env and paste your key
-```
-
-Both `.env` and `.streamlit/secrets.toml` are git-ignored and never committed.
+1. **In-App (BYOK - Recommended for End Users)**: Run the app and enter your key in the sidebar. It is stored securely in your browser's `localStorage` and sent directly to Google.
+2. **Streamlit Secrets (Recommended for Hosted Deployments)**:
+   ```bash
+   cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+   # Edit .streamlit/secrets.toml with GEMINI_API_KEY = "AIza..."
+   ```
+3. **Environment File**:
+   ```bash
+   cp .env.example .env
+   # Edit .env with GEMINI_API_KEY=AIza...
+   ```
 
 ---
 
-## Run
+## Run the Application
 
 ```bash
 streamlit run app.py
 ```
 
-Then open <http://localhost:8501>.
+Open [http://localhost:8501](http://localhost:8501) in your browser.
 
-### Usage
+### How to Use
 
-1. Copy the **video ID** — the part after `v=` in a YouTube URL
-   (`youtube.com/watch?v=`**`OZ5OZZZ2cvk`**).
-2. (Optional) Add **custom instructions**.
-3. Select one or more **platforms**.
-4. Click **Generate content**, then copy or download the posts.
+1. Enter a **YouTube Video ID** (e.g. `OZ5OZZZ2cvk` from `youtube.com/watch?v=OZ5OZZZ2cvk`).
+2. (Optional) Provide **custom instructions** (e.g., "Focus on actionable takeaways for tech founders").
+3. Select your **target platforms** (LinkedIn, Instagram, Twitter/X, Facebook).
+4. Click **Generate content** to preview, copy, or download.
 
 ---
 
-## Project structure
+## Project Structure
 
 ```
 social-media-AI-agent/
-├── app.py                       # Streamlit UI
-├── social_media_agent.py        # Transcript fetch + Gemini generation logic
-├── requirements.txt             # Pinned dependencies
-├── .env.example                 # Env-var config template
+├── app.py                       # Streamlit UI with adaptive light/dark theming
+├── social_media_agent.py        # Core logic: transcript fetching, Gemini 3.6 Flash runner
+├── requirements.txt             # Pinned project dependencies
+├── .env.example                 # Environment variable template
 ├── .streamlit/
 │   └── secrets.toml.example     # Streamlit secrets template
 ├── docs/
-│   └── DESIGN.md                # Engineering journey: problems, decisions, design
-└── README.md
+│   └── DESIGN.md                # First principles engineering journey & design doc
+└── README.md                    # Project overview & documentation
 ```
+
+---
+
+## Working Around YouTube IP Bans
+
+Cloud host IPs (AWS, GCP, Azure, Streamlit Cloud) or heavy request volumes can occasionally trigger YouTube rate limits (`RequestBlocked` or `IpBlocked`).
+
+To route transcript requests through a proxy, set **one** of the following in `.streamlit/secrets.toml` or `.env`:
+
+```toml
+# Option A: Webshare Residential Proxies (https://www.webshare.io/)
+WEBSHARE_PROXY_USERNAME = "your_username"
+WEBSHARE_PROXY_PASSWORD = "your_password"
+
+# Option B: Generic HTTP/HTTPS Proxy
+HTTP_PROXY_URL  = "http://user:pass@proxy-host:port"
+HTTPS_PROXY_URL = "http://user:pass@proxy-host:port"
+```
+
+When configured, proxy routing activates automatically.
 
 ---
 
 ## Troubleshooting
 
-| Problem | Fix |
-| --- | --- |
-| *"Gemini API key not configured"* | Add your key to `.streamlit/secrets.toml` or `.env`. |
-| *"YouTube is blocking transcript requests"* | YouTube rate-limited your IP (common on cloud/shared IPs or after many requests). Wait a few minutes, or configure a proxy — see **[Working around YouTube IP bans](#working-around-youtube-ip-bans)**. |
-| Transcript error / empty result | The video may have transcripts disabled or no captions in the requested language. Try another video. |
-| Wrong/extra platforms generated | Already fixed — only selected platforms are returned. Re-pull the latest code. |
-| Copy button does nothing | Clipboard access requires a secure context (localhost is fine); otherwise use `Ctrl+C`. |
+| Problem | Cause | Resolution |
+|---|---|---|
+| *"Gemini API key not configured"* | No key detected in sidebar, secrets, or env. | Enter your key in the sidebar BYOK field or set `GEMINI_API_KEY`. |
+| *"YouTube is temporarily blocking transcript requests"* | YouTube IP rate limit on shared network/cloud host. | Wait a few minutes or configure a residential proxy (see above). |
+| *"This video has no available transcript/captions"* | Captions are disabled on the video. | Test with a video that has closed captions enabled. |
+| Text hard to read in Dark Mode | Theme contrast mismatch. | Resolved — app uses adaptive high-contrast CSS tokens for light and dark modes. |
+| Copy button inactive | Insecure browser context (non-HTTPS/non-localhost). | Use HTTPS, `localhost`, or manual selection (`Ctrl+C` / `Cmd+C`). |
 
 ---
 
-## Working around YouTube IP bans
+## License
 
-YouTube blocks transcript requests from IPs that make too many requests or that
-belong to cloud providers (AWS, GCP, Azure, etc.). If you see *"YouTube is
-blocking transcript requests"*:
-
-- **Quick fix:** wait a few minutes and retry from a normal home/office network.
-- **Robust fix:** route transcript fetches through a proxy. Set **one** of these
-  in `.streamlit/secrets.toml` or `.env`:
-
-  ```toml
-  # Recommended — Webshare residential proxies (https://www.webshare.io/)
-  WEBSHARE_PROXY_USERNAME = "..."
-  WEBSHARE_PROXY_PASSWORD = "..."
-
-  # …or any generic HTTP/HTTPS proxy
-  HTTP_PROXY_URL  = "http://user:pass@host:port"
-  HTTPS_PROXY_URL = "http://user:pass@host:port"
-  ```
-
-  When set, the app fetches transcripts through the proxy automatically; when
-  unset, it connects directly. No code changes needed.
-
----
-
-## Notes
-
-- The transcript is truncated to ~4000 characters before generation to stay efficient.
-- The Gemini model is selected automatically from those your key can access
-  (preferring `gemini-2.5-flash` / `gemini-2.0-flash`), so a retired model id
-  never breaks the app. Adjust `PREFERRED_MODELS` in `social_media_agent.py`.
-- A user-supplied key (BYOK) is saved in your browser's `localStorage` so it
-  persists across refreshes; clear it anytime with the sidebar button.
+MIT License. Feel free to use, modify, and distribute.

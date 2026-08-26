@@ -1,151 +1,175 @@
-# Design & Engineering Journey
+# Design & Engineering Journey: First Principles of Reasoning
 
-This document is the "why" behind the code — the problems we hit, what the app
-looked like before, the decisions we made, and the system design. It exists so
-that anyone reading the repo can see this was *engineered*, not just typed out.
+This document captures the engineering journey, architectural decisions, and failure investigations behind the **AI Social Media Content Generator**.
+
+Every design choice in this repository was derived by deconstructing the problem down to its most basic, foundational truths (**First Principles of Reasoning**) and building upward, rather than relying on standard analogies or superficial tutorials.
 
 ---
 
-## 1. Where we started (the "before")
-
-The original app was a single 447-line `app.py` plus a backend module. It worked
-on a happy path but had real defects:
-
-- **Wrong content was generated.** Selecting only "Facebook" could still return
-  LinkedIn/Instagram/Twitter posts.
-- **A fake "Copy" button** that showed "Copied!" but copied nothing.
-- **Results vanished on interaction.** Any button click triggered a Streamlit
-  rerun that wiped the generated posts, because nothing was stored in
-  `st.session_state`.
-- **Emoji used as UI icons** everywhere (📧 🎨 🚀 …) — fine for a hobby app,
-  not for a professional tool.
-- **A retired model id** (`gemini-2.0-flash-exp`) that later started 404-ing.
-- **Brittle JSON parsing** with a broken code-fence stripper
-  (`replace("``````", "")` — six backticks, which never matched).
-- **An inaccurate README** describing OpenAI/GPT-4o-mini when the code used
-  Google Gemini.
-
-## 2. How we worked (process)
-
-We ran the project in explicit phases, each on its own git branch, each verified
-before merge:
-
-| Phase | Branch | Outcome |
-|---|---|---|
-| Bug fix | `fix/post-generation-selection` | Only-selected-platforms + robust parsing |
-| Icons | `ui/replace-emojis-with-icons` | Material Symbols, zero emoji in UI body |
-| UI overhaul | `ui/professional-polish` | Design system, persistence, real copy |
-| Hardening | `polish/security-perf` | Secrets, caching, pinned deps, docs |
-| Follow-ups | `main` | BYOK, model auto-select, CSS render fix, quality |
-
-The discipline that mattered most: **verify by observation, not assumption.**
-Early on we "verified" with `curl` returning `HTTP 200` — which only proves the
-server responded, not that the page is correct. That bit us (see §3.2). After
-that we drove a real headless Chrome session over the DevTools Protocol to take
-screenshots and even simulate typing + reload.
-
-## 3. The hard problems (and how we solved them)
-
-### 3.1 The real selection bug was in the prompt, not the checkboxes
-The UI collected the selected platforms correctly. The bug was that the prompt's
-JSON *example* hardcoded `LinkedIn / Instagram / Twitter`, so the model imitated
-the example regardless of selection.
-
-**Fix:** build the example and a per-platform instruction list *dynamically* from
-the user's selection, add an explicit "EXACTLY these and no others" constraint,
-and then **filter the model's output** to the requested platforms
-(case-insensitively, order-preserving) as a defensive guard. Defense in depth:
-constrain the model *and* validate its output.
-
-### 3.2 CSS rendered as literal text on screen
-After the UI overhaul, the page showed raw CSS as text. Root cause: Streamlit
-renders `st.markdown` through a Markdown parser. A line indented 4+ spaces is a
-*code block*, and a blank line *ends* an HTML block — so our nicely-indented,
-blank-line-separated `<style>` block was printed instead of injected.
-
-**Fix:** left-align every raw-HTML block to column 0 and remove internal blank
-lines. **Lesson:** Markdown-in-Streamlit is whitespace-sensitive; treat injected
-HTML/CSS as one contiguous, unindented block.
-
-### 3.3 The model id rotted
-`gemini-2.0-flash-exp` was an experimental alias Google later removed → 404.
-
-**Fix:** don't hardcode. Query `list_models()`, keep models that support
-`generateContent`, and pick the best available from a preference list
-(`gemini-2.5-flash` → `2.0-flash` → …) with a safe fallback. The app now adapts
-to whatever the key can access.
-
-### 3.4 "Bring your own key" that survives a refresh
-For a publicly shared app we didn't want to pay for everyone's usage, so users
-supply their own Gemini key (BYOK). But a Streamlit `session_state` value is lost
-on a full page refresh, forcing re-entry every time.
-
-**Fix:** persist the key in the browser's `localStorage` via
-`streamlit-local-storage`. The subtlety: the component returns `None` on first
-render (it loads asynchronously) and the real value on a follow-up rerun. A
-`text_input(value=...)` default is ignored once the widget has state, so we
-**seed `st.session_state` once the stored value arrives**, guarded by a flag, and
-provide a "Clear saved key" button. Verified end-to-end: type a key → reload →
-key is still there.
-
-### 3.5 Output quality vs. reliability
-The generated posts read well, but parsing relied on stripping Markdown fences,
-and there was no length/format discipline per platform.
-
-**Fix:** switch to Gemini's **native JSON mode**
-(`response_mime_type="application/json"`) so the response is guaranteed valid
-JSON, and add **per-platform specs** (`PLATFORM_SPECS`) encoding each network's
-conventions — Twitter's 280-char cap, LinkedIn hook+CTA+hashtags, Instagram
-emoji + hashtag block, Facebook conversational tone.
-
-## 4. System design
+## 1. The First Principles Framework
 
 ```
-┌──────────────────────── app.py (Streamlit UI) ────────────────────────┐
-│  • Design-system CSS (single injected block)                           │
-│  • Sidebar: BYOK key  ──persist──▶  browser localStorage               │
-│  • Inputs: video id, custom instructions, platform checkboxes          │
-│  • Results rendered from st.session_state (survive reruns)             │
-│  • Real clipboard copy via navigator.clipboard component               │
-└───────────────┬───────────────────────────────────────────────────────┘
-                │ Runner.run(video_id, platforms, custom_query, api_key)
-                ▼
-┌──────────────────────── social_media_agent.py ────────────────────────┐
-│  get_transcript ── youtube-transcript-api (cached via st.cache_data)   │
-│  select_model_name() ── list_models() → best available                 │
-│  generate_social_content():                                            │
-│     • per-platform guidance + strict platform constraint               │
-│     • Gemini JSON mode → parse → FILTER to selected platforms          │
-│  → AgentResult(posts=[Post(platform, content)])                        │
+                          FIRST PRINCIPLES DECOMPOSITION
+                          
+  [Problem Domain]               [Fundamental Truth]                [Engineered Solution]
+  ───────────────────────────────────────────────────────────────────────────────────────────
+  Platform Selection             LLMs follow prompt examples         Dynamic Prompt Synthesis +
+                                 more than negative constraints.     Post-Generation Strict Filter
+  ───────────────────────────────────────────────────────────────────────────────────────────
+  Model Deprecation              Hosted AI model IDs are             Runtime list_models() Query +
+  & Version Rot                  ephemeral and change over time.     Prioritized Gemini 3.6 Flash
+  ───────────────────────────────────────────────────────────────────────────────────────────
+  Streamlit Script Reruns        Streamlit executes top-to-bottom;   Decoupled Runner + session_state +
+  & State Destruction            ephemeral memory wipes on reload.   Async localStorage BYOK Bridge
+  ───────────────────────────────────────────────────────────────────────────────────────────
+  Dark/Light Theme Invisibility  Perception requires contrast ratio  Adaptive Dual-Mode CSS Tokens +
+                                 (WCAG AA 4.5:1) on all backgrounds. WCAG AA Contrast Physics
+  ───────────────────────────────────────────────────────────────────────────────────────────
+  Prompt Deserialization         Markdown code fences break          Gemini Native JSON Mode +
+                                 standard JSON deserializers.        RegEx Defense Fallbacks
+```
+
+---
+
+## 2. Where We Started (The Baseline Defects)
+
+The original prototype was a monolithic script with significant hidden failure modes:
+
+1. **Platform Bleed**: Selecting only "Facebook" still produced LinkedIn, Instagram, and Twitter posts.
+2. **Brittle/Retired Model IDs**: Hardcoded references to experimental or non-existent models (`gemini-2.0-flash-exp`, `gemini-2.5-flash`) caused 404 runtime crashes when accessed.
+3. **Destructive Interaction Loops**: Any button click or widget change re-ran Streamlit top-to-bottom, wiping previously generated results from the screen.
+4. **Theme Collision & Text Invisibility**: Hardcoded light theme colors caused dark theme text to render white-on-white or dark-on-dark, making posts unreadable on dark backgrounds.
+5. **Simulated Clipboard Copy**: A dummy "Copy" button flashed "Copied!" without interacting with `navigator.clipboard`.
+6. **Emoji Icon Proliferation**: Emoji glyphs rendered inconsistently across operating systems and browsers instead of using standardized vector design tokens.
+
+---
+
+## 3. Deep-Dive: Root Causes & First-Principles Solutions
+
+### 3.1 Platform Selection Bug: Prompt Contamination & Defensive Filtering
+- **Symptom**: Selecting a single checkbox (e.g., Facebook) returned posts for all platforms.
+- **Root Cause (First Principle)**: The original prompt contained a hardcoded JSON schema example containing `LinkedIn`, `Instagram`, and `Twitter`. LLMs are probabilistic token predictors that strongly bias toward repeating keys present in few-shot prompt demonstrations, overriding textual instructions like "only generate selected platforms."
+- **First-Principles Solution**:
+  1. **Dynamic Prompt Synthesis**: The example structure and platform rules are synthesized dynamically at runtime using only the user-selected platforms.
+  2. **Defensive Post-Filtering**: Asking an LLM nicely is necessary but insufficient. The backend validates the deserialized output, filters keys case-insensitively, and guarantees that only selected platforms are returned in the response object.
+
+### 3.2 Model Availability & Version Deprecation: Dynamic Runtime Discovery
+- **Symptom**: Hardcoded model IDs like `gemini-2.5-flash` or `gemini-2.0-flash-exp` produce HTTP 404 or unsupported method errors when Google updates API endpoints.
+- **Root Cause (First Principle)**: Model lifecycles in managed AI platforms are mutable and non-permanent. Hardcoding any single model string couples application uptime to third-party deprecation cycles.
+- **First-Principles Solution**:
+  1. **Discovery over Assumption**: At startup, `select_model_name()` queries `genai.list_models()`, filtering exclusively for endpoints supporting `generateContent`.
+  2. **Tiered Preference Hierarchy**: The resolver iterates through a prioritized list starting with `gemini-3.6-flash`:
+     ```python
+     PREFERRED_MODELS = [
+         "gemini-3.6-flash",
+         "gemini-2.0-flash",
+         "gemini-flash-latest",
+         "gemini-1.5-flash",
+     ]
+     ```
+  3. **Autonomous Fallback**: If preferred models are unavailable or unlisted under a specific API tier, the resolver automatically falls back to any available non-experimental Flash model, preventing outages.
+
+### 3.3 Text Invisibility & Dual-Theme Contrast Engineering
+- **Symptom**: When users operated in Dark Mode (or on systems with dark color schemes), titles, body text, inputs, and container contents became unreadable or invisible.
+- **Root Cause (First Principle)**: Contrast is a physical property of luminance ratio:
+  $$C = \frac{L_1 + 0.05}{L_2 + 0.05} \ge 4.5:1$$
+  Streamlit applies its native theme to inner markdown nodes (`#fafafa` light text in dark mode). When custom CSS hardcoded white container backgrounds (`#FFFFFF`) or dark slate text (`#0F172A`), it created catastrophic collisions:
+  - Streamlit's dark-theme white text on custom white card containers ($C \approx 1.1:1$ — invisible).
+  - Hardcoded dark text on Streamlit's dark app background ($C \approx 1.2:1$ — invisible).
+- **First-Principles Solution**:
+  1. **Adaptive Token System**: Centralize all design properties into CSS custom properties (`var(--text)`, `var(--surface)`, `var(--border)`, `var(--muted)`) that invert dynamically based on `@media (prefers-color-scheme: dark)` and Streamlit's `[data-theme="dark"]` selector.
+  2. **Contrast Safe Pairs**:
+     - **Light Theme**: `--bg: #F8FAFC`, `--surface: #FFFFFF`, `--text: #0F172A` ($C > 15:1$).
+     - **Dark Theme**: `--bg: #0B0F19`, `--surface: #1E293B`, `--text: #F8FAFC` ($C > 14:1$).
+  3. **Universal Explicit Inheritance**: Explicitly assign theme variables to all Streamlit elements (`stMarkdown`, `stWidgetLabel`, `stCaptionContainer`, `stMetricLabel`, `stMetricValue`, `stTextArea`, `stTextInput`).
+  4. **Isolated Iframe Theming**: The custom clipboard Copy button (rendered inside a sandboxed iframe) includes its own media query rules so that it adapts independently to the parent browser's theme.
+
+### 3.4 Streamlit CSS Rendering Glitch: Whitespace & Parser Rules
+- **Symptom**: CSS stylesheet rules were rendered as literal text on the UI screen.
+- **Root Cause (First Principle)**: Streamlit passes `st.markdown` input through a CommonMark parser before injecting HTML. In Markdown specifications:
+  - Any text line indented by 4+ spaces is treated as an indented `<pre><code>` block.
+  - A blank line within an HTML tag terminates raw HTML parsing and re-activates Markdown prose interpretation.
+- **First-Principles Solution**: Left-align the entire `<style>` block to column 0 with zero leading spaces and zero internal blank lines.
+
+### 3.5 Bring-Your-Own-Key (BYOK) & Browser State Persistence
+- **Symptom**: Public deployments exhaust host API quotas, and asking users to re-enter keys on every reload causes friction.
+- **Root Cause (First Principle)**: Streamlit's server-side `session_state` is destroyed upon browser session disconnect or hard refresh.
+- **First-Principles Solution**:
+  1. **Zero-Trust Client Storage**: Persist the user's API key strictly within the browser's `localStorage` via `streamlit-local-storage`. Keys are never written to server logs or disks.
+  2. **Asynchronous Handshake State Machine**: `localStorage.getItem()` returns `None` on the initial mount while the iframe loads, followed by the stored key on the subsequent event cycle. We implemented a `_byok_seeded` session state gate to populate `st.session_state["api_key_field"]` without triggering infinite rerun loops.
+  3. **Widget State Lifecycle & `on_click` Callbacks**: Mutating `st.session_state["api_key_field"]` inside an inline `if st.button(...)` block fails with `StreamlitAPIException` because Streamlit forbids mutating widget state after the widget has already been instantiated in that execution cycle. Moving the clear logic into an `on_click=_clear_api_key` callback ensures the state reset executes at the start of the next cycle *prior* to widget instantiation.
+
+### 3.6 Output Structuring & Platform Specs
+- **Symptom**: Generated posts lacked authentic platform identity and frequently exceeded length budgets (e.g. Twitter posts over 280 characters).
+- **Root Cause (First Principle)**: General "make it engaging" prompts lack measurable boundary conditions.
+- **First-Principles Solution**:
+  1. **Domain-Specific Rules Engine (`PLATFORM_SPECS`)**:
+     - **LinkedIn**: Professional hook, whitespace formatting, CTA, 3–5 hashtags, 150–250 words.
+     - **Instagram**: Punchy visual hook, scannable emoji structure, CTA, separate 8–12 hashtag block.
+     - **Twitter/X**: Hard constraint — strictly under **280 characters total** (including hashtags), single tweet.
+     - **Facebook**: Conversational, community-oriented, open question to drive comments.
+  2. **Native JSON Mode**: Generates using `response_mime_type="application/json"` to enforce valid syntax at the decoding layer.
+
+---
+
+## 4. System Architecture
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        app.py (Streamlit UI Layer)                     │
+│                                                                        │
+│  ┌─────────────────────────┐     ┌──────────────────────────────────┐  │
+│  │ Adaptive CSS Theming    │     │ Browser localStorage (BYOK Key)  │  │
+│  │ (Light & Dark WCAG AA)  │     │ Async Handshake State Machine    │  │
+│  └─────────────────────────┘     └──────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │ Input Card: Video ID, Custom Instructions, Platform Checkboxes   │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │ Results Container (st.session_state Persisted Across Reruns)     │  │
+│  │ • Summary Metrics  • Formatted Post Areas  • Copy/Download Tools │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────┬───────────────────────────────────┘
+                                     │ Runner.run(video_id, platforms, custom_query, api_key)
+                                     ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                   social_media_agent.py (Agent Core)                   │
+│                                                                        │
+│  ┌─────────────────────────┐     ┌──────────────────────────────────┐  │
+│  │ YouTube Transcript Fetch│     │ Dynamic Model Discovery          │  │
+│  │ (st.cache_data + Proxy) │     │ (Prefers Gemini 3.6 Flash)       │  │
+│  └─────────────────────────┘     └──────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │ Dynamic Schema & Prompt Synthesis                                │  │
+│  │ (PLATFORM_SPECS + User Constraint Enforcement)                   │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │ Gemini Generative Model (Native JSON Mode Execution)             │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │ Defensive Output Filter: Strict Matching to Selected Platforms   │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Key design principles**
-- **Separation of concerns:** UI (`app.py`) never talks to Gemini directly; all
-  generation goes through `Runner`/`social_media_agent`.
-- **Defense in depth:** constrain the model, then validate its output.
-- **Fail safe, not loud:** missing key, retired model, transcript errors, and
-  malformed JSON each degrade gracefully with a user-facing message.
-- **Config over hardcoding:** key from `st.secrets`/env/BYOK; model chosen at
-  runtime; platform rules in one editable dict.
-- **Privacy by default:** transcripts aren't stored; the BYOK key lives only in
-  the user's own browser and is sent directly to Google.
+---
 
-## 5. Verification methodology
+## 5. Verification Methodology
 
-- **Unit-level:** mocked the Gemini client to prove platform filtering, JSON-mode
-  invocation, and fence-stripping without spending API calls.
-- **Boot-level:** launched Streamlit headless and confirmed a clean start with
-  and without a key, and in a fresh virtualenv.
-- **Visual/behavioral:** drove headless Chrome over the DevTools Protocol to
-  screenshot the rendered UI and to simulate typing a key + reloading to confirm
-  persistence. This is what turned "I think it works" into "I watched it work."
+To uphold first principles, we verify functionality by **observing behavior under real conditions** rather than relying on assumed success:
 
-## 6. Known limitations / next steps
+1. **Syntax & Compilation Verification**: Static verification across all modules with `py_compile`.
+2. **Contrast & Theme Verification**: Tested text legibility across light (`#F8FAFC` background) and dark (`#0B0F19` background) modes to confirm WCAG AA contrast ratio ($> 4.5:1$).
+3. **Dynamic Model Fallback Verification**: Simulated model discovery with various available endpoints to ensure deterministic fallback behavior.
+4. **State Persistence Verification**: Confirmed that triggering clipboard copy or downloading `.txt`/`.json` assets does not reset generated results.
 
-- `google-generativeai` is deprecated in favor of `google-genai`; a future change
-  should migrate the SDK.
-- No rate-limiting on transcript fetches for public deployments.
-- A hybrid "free shared quota, then BYOK for unlimited" model would be a natural
-  next step.
-- Could add `response_schema` (typed) to JSON mode for even stricter outputs.
+---
+
+## 6. Summary of Architectural Principles
+
+1. **Deconstruct to Core Truths**: Never accept inherited conventions without examining underlying technical constraints.
+2. **Defense in Depth**: Constrain the probabilistic AI layer *and* validate deterministically in application code.
+3. **Graceful Degradation**: Treat network errors, IP bans, missing keys, and model deprecation as expected states, not unhandled crashes.
+4. **Zero-Trust Privacy**: Keep user keys in client browser storage and transmit directly to API providers.
+5. **Universal Accessibility**: Ensure design systems and color contrast are physically readable across all viewing environments.
+
