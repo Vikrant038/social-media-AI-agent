@@ -13,6 +13,8 @@ Built with **Streamlit**.
 > 📐 Curious how this was built — the bugs I hunted, the trade-offs, and the
 > system design? See **[docs/DESIGN.md](docs/DESIGN.md)**.
 
+<img width="1441" height="599" alt="image" src="https://github.com/user-attachments/assets/c6dfdb63-d51e-4ee6-9415-d0a82b60ff80" />
+
 ---
 
 ## The problem I'm solving
